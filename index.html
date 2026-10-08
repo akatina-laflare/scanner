@@ -395,7 +395,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '11';
+const APP_VERSION = '12';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -554,7 +554,191 @@ function rotate(c, r) {
 
 /* ---------------- rilevamento bordi ---------------- */
 function polyArea(q) { let a = 0; for (let i = 0; i < 4; i++) { const [x1, y1] = q[i], [x2, y2] = q[(i + 1) % 4]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; }
+// Rilevamento bordi del documento: linee dritte (Hough) + scelta del quadrilatero meglio sostenuto dai bordi
+function detectQuad(d, W, H) {
+  const N = W * H;
+  // grigio + sfocatura leggera (due passate box 3x3)
+  let g = new Float32Array(N);
+  for (let i = 0, p = 0; p < N; p++, i += 4) g[p] = d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114;
+  const blur = src => {
+    const t = new Float32Array(N), o = new Float32Array(N);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const r = y * W; t[r + x] = (src[r + Math.max(0, x - 1)] + src[r + x] + src[r + Math.min(W - 1, x + 1)]) / 3; }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) o[y * W + x] = (t[Math.max(0, y - 1) * W + x] + t[y * W + x] + t[Math.min(H - 1, y + 1) * W + x]) / 3;
+    return o;
+  };
+  g = blur(blur(g));
+  // anche il colore conta: un foglio bianco su un tavolo grigio-azzurro si distingue meglio per saturazione
+  const sat = new Float32Array(N);
+  for (let i = 0, p = 0; p < N; p++, i += 4) { const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]); sat[p] = (mx - mn) * 1.2; }
+  const s2 = blur(blur(sat));
+  // gradiente (Sobel) su luminanza e saturazione
+  const mag = new Float32Array(N), ang = new Float32Array(N);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const p = y * W + x;
+    let gx = 0, gy = 0, sx = 0, sy = 0;
+    for (const [arr, w] of [[g, 1], [s2, 1]]) {
+      const a = arr[p - W - 1], b = arr[p - W], c = arr[p - W + 1], dd = arr[p - 1], f = arr[p + 1], gg = arr[p + W - 1], h = arr[p + W], ii = arr[p + W + 1];
+      const X = (c + 2 * f + ii) - (a + 2 * dd + gg), Y = (gg + 2 * h + ii) - (a + 2 * b + c);
+      if (w === 1 && arr === g) { gx = X; gy = Y; } else { sx = X; sy = Y; }
+    }
+    const m1 = Math.hypot(gx, gy), m2 = Math.hypot(sx, sy);
+    if (m1 >= m2) { mag[p] = m1; ang[p] = Math.atan2(gy, gx); } else { mag[p] = m2; ang[p] = Math.atan2(sy, sx); }
+  }
+  // soglia adattiva + soppressione dei non massimi
+  const hist = new Uint32Array(256); let cnt = 0;
+  for (let p = 0; p < N; p++) if (mag[p] > 0) { hist[Math.min(255, mag[p] | 0)]++; cnt++; }
+  let acc = 0, thr = 30; for (let k = 0; k < 256; k++) { acc += hist[k]; if (acc >= cnt * .88) { thr = Math.max(14, k); break; } }
+  const thrLo = Math.max(8, thr * .3);
+  const E = new Uint8Array(N);
+  const m = Math.round(Math.min(W, H) * .01) + 2;
+  for (let y = m; y < H - m; y++) for (let x = m; x < W - m; x++) {
+    const p = y * W + x, v = mag[p]; if (v < thrLo) continue;
+    const a = ang[p], ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+    let n1, n2;
+    if (ca > .92) { n1 = mag[p - 1]; n2 = mag[p + 1]; } else if (sa > .92) { n1 = mag[p - W]; n2 = mag[p + W]; }
+    else if (Math.cos(a) * Math.sin(a) > 0) { n1 = mag[p - W - 1]; n2 = mag[p + W + 1]; } else { n1 = mag[p - W + 1]; n2 = mag[p + W - 1]; }
+    if (v >= n1 && v >= n2) E[p] = 1;
+  }
+  // bordi dilatati per misurare quanto un lato è "sostenuto"
+  const D = new Uint8Array(N);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const p = y * W + x; if (E[p]) { D[p] = D[p - 1] = D[p + 1] = D[p - W] = D[p + W] = D[p - W - 1] = D[p - W + 1] = D[p + W - 1] = D[p + W + 1] = 1; } }
+  // Hough con voto orientato
+  const NT = 180, diag = Math.ceil(Math.hypot(W, H)), NR = diag * 2 + 1;
+  const A = new Float32Array(NT * NR), cs = new Float32Array(NT), sn = new Float32Array(NT);
+  for (let t = 0; t < NT; t++) { const th = t * Math.PI / NT; cs[t] = Math.cos(th); sn[t] = Math.sin(th); }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const p = y * W + x; if (!E[p]) continue;
+    let th = ang[p]; if (th < 0) th += Math.PI; if (th >= Math.PI) th -= Math.PI;
+    const t0 = Math.round(th * NT / Math.PI), w = Math.min(2, mag[p] / thr);
+    for (let dt = -4; dt <= 4; dt++) {
+      const t = (t0 + dt + NT) % NT, r = Math.round(x * cs[t] + y * sn[t]) + diag;
+      A[t * NR + r] += w;
+    }
+  }
+  const peaks = [];
+  for (let t = 0; t < NT; t++) for (let r = 0; r < NR; r++) {
+    const v = A[t * NR + r]; if (v < Math.min(W, H) * .08) continue;
+    let ok = true;
+    for (let dt = -3; dt <= 3 && ok; dt++) for (let dr = -6; dr <= 6; dr++) {
+      if (!dt && !dr) continue;
+      const tt = (t + dt + NT) % NT, rr = r + dr; if (rr < 0 || rr >= NR) continue;
+      if (A[tt * NR + rr] > v) { ok = false; break; }
+    }
+    if (ok) peaks.push({ t, r: r - diag, v });
+  }
+  peaks.sort((a, b) => b.v - a.v);
+  const horiz = [], vert = [];
+  for (const pk of peaks) { const deg = pk.t * 180 / NT; ((deg > 45 && deg < 135) ? horiz : vert).push(pk); if (horiz.length >= 20 && vert.length >= 20) break; }
+  const H2 = horiz.slice(0, 20), V2 = vert.slice(0, 20);
+  const inter = (a, b) => { const det = cs[a.t] * sn[b.t] - sn[a.t] * cs[b.t]; if (Math.abs(det) < 1e-6) return null; return [(a.r * sn[b.t] - sn[a.t] * b.r) / det, (cs[a.t] * b.r - a.r * cs[b.t]) / det]; };
+  const support = (P, Q) => {
+    const L = Math.hypot(Q[0] - P[0], Q[1] - P[1]), n = Math.max(8, Math.round(L / 2)); let hit = 0, tot = 0;
+    for (let k = 0; k <= n; k++) { const x = Math.round(P[0] + (Q[0] - P[0]) * k / n), y = Math.round(P[1] + (Q[1] - P[1]) * k / n); if (x < 0 || y < 0 || x >= W || y >= H) continue; tot++; if (D[y * W + x]) hit++; }
+    return tot > n * .5 ? hit / (n + 1) : 0;
+  };
+  // colore "carta" del quadrilatero e differenza col colore appena fuori da ogni lato:
+  // il vero bordo del foglio ha fuori il tavolo, i riquadri interni del documento hanno fuori altra carta
+  const px = (x, y) => { x = Math.max(0, Math.min(W - 1, Math.round(x))); y = Math.max(0, Math.min(H - 1, Math.round(y))); const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+  const outside = (q, cx, cy) => {
+    // colore della carta: mediana di punti campionati dentro il quadrilatero
+    const sm = [[], [], []];
+    for (let u = 1; u < 8; u++) for (let v = 1; v < 8; v++) {
+      const a = u / 8, b = v / 8;
+      const x = (1 - a) * (1 - b) * q[0][0] + a * (1 - b) * q[1][0] + a * b * q[2][0] + (1 - a) * b * q[3][0];
+      const y = (1 - a) * (1 - b) * q[0][1] + a * (1 - b) * q[1][1] + a * b * q[2][1] + (1 - a) * b * q[3][1];
+      const c = px(x, y); sm[0].push(c[0]); sm[1].push(c[1]); sm[2].push(c[2]);
+    }
+    const pc = sm.map(arr => arr.sort((m, n) => m - n)[Math.floor(arr.length * .8)]); // la carta è il colore chiaro più diffuso
+    const off = Math.max(3, Math.min(W, H) * .02), res = [];
+    for (let s = 0; s < 4; s++) {
+      const P = q[s], Q = q[(s + 1) % 4], L = Math.hypot(Q[0] - P[0], Q[1] - P[1]);
+      let nx = -(Q[1] - P[1]) / L, ny = (Q[0] - P[0]) / L; const mx = (P[0] + Q[0]) / 2, my = (P[1] + Q[1]) / 2;
+      if (nx * (cx - mx) + ny * (cy - my) > 0) { nx = -nx; ny = -ny; } // normale verso l'esterno
+      const ds = [], di = [];
+      for (let k = 1; k < 16; k++) {
+        const t = k / 16, x = P[0] + (Q[0] - P[0]) * t, y = P[1] + (Q[1] - P[1]) * t;
+        const b = px(x - nx * off, y - ny * off); di.push(Math.abs(b[0] - pc[0]) + Math.abs(b[1] - pc[1]) + Math.abs(b[2] - pc[2]));
+      }
+      ds.sort((m, n) => m - n); di.sort((m, n) => m - n); res.push(di.length >= 5 ? di[di.length >> 1] : -1); // mediana: inchiostro e scritte non contano
+    }
+    return res;
+  };
+  const area = q => { let s = 0; for (let i = 0; i < 4; i++) { const [a, b] = q[i], [c, e] = q[(i + 1) % 4]; s += a * e - c * b; } return Math.abs(s) / 2; };
+  const convex = q => { let sign = 0; for (let i = 0; i < 4; i++) { const [a, b] = q[i], [c, e] = q[(i + 1) % 4], [f, h] = q[(i + 2) % 4]; const z = (c - a) * (h - e) - (e - b) * (f - c); if (Math.abs(z) < 1e-9) return false; const s = Math.sign(z); if (!sign) sign = s; else if (s !== sign) return false; } return true; };
+  let best = null, bestScore = 0; const cands = [];
+  const mgn = Math.max(W, H) * .04;
+  for (let i = 0; i < H2.length; i++) for (let j = i + 1; j < H2.length; j++) {
+    let top = H2[i], bot = H2[j];
+    for (let k = 0; k < V2.length; k++) for (let l = k + 1; l < V2.length; l++) {
+      let lef = V2[k], rig = V2[l];
+      const c1 = inter(top, lef), c2 = inter(top, rig), c3 = inter(bot, rig), c4 = inter(bot, lef);
+      if (!c1 || !c2 || !c3 || !c4) continue;
+      let q = [c1, c2, c3, c4];
+      if (q.some(([x, y]) => x < -mgn || y < -mgn || x > W + mgn || y > H + mgn)) continue;
+      // ordina: in alto a sinistra, in alto a destra, in basso a destra, in basso a sinistra
+      const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+      q.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+      const tlI = q.reduce((bi, p, ii) => (p[0] + p[1] < q[bi][0] + q[bi][1] ? ii : bi), 0); q = [0, 1, 2, 3].map(k2 => q[(tlI + k2) % 4]);
+      if (!convex(q)) continue;
+      const ar = area(q) / (W * H); if (ar < .12) continue;
+      const sides = [0, 1, 2, 3].map(s => support(q[s], q[(s + 1) % 4]));
+      const mean = sides.reduce((a, b) => a + b, 0) / 4, mn = Math.min(...sides);
+      // angoli vicini a 90° premiano i rettangoli veri visti in prospettiva
+      let angPen = 0; for (let s = 0; s < 4; s++) { const [a, b] = q[(s + 3) % 4], [c, e] = q[s], [f, h] = q[(s + 1) % 4]; const v1x = a - c, v1y = b - e, v2x = f - c, v2y = h - e; const cosA = (v1x * v2x + v1y * v2y) / (Math.hypot(v1x, v1y) * Math.hypot(v2x, v2y)); angPen += Math.max(0, Math.abs(cosA) - .35); }
+      const od = outside(q, cx, cy).filter(v => v >= 0), cs = od.map(v => Math.max(0, 1 - v / 70)), con = cs.length ? (Math.min(...cs) + cs.reduce((a, b) => a + b, 0) / cs.length) / 2 : .6;
+      const score = mean * (.55 + .45 * mn) + .25 * Math.min(ar, .9) + .35 * con - .25 * angPen;
+      const odMax = od.length ? Math.max(...od) : 0;
+      cands.push({ q, mean, mn, ar, score, con, odMax });
+      if (score > bestScore) { bestScore = score; best = { q, mean, mn, ar, score, con, odMax }; }
+    }
+  }
+  // il foglio è il riquadro ben sostenuto più esterno: i riquadri dentro al documento (tabelle, fasce grigie) non devono vincere
+  const best0 = best;
+  if (best) for (const c of cands) if (c.mean >= Math.max(.7, best0.mean - .1) && c.mn >= Math.max(.55, best0.mn - .25) && c.score >= bestScore * .8 && c.odMax <= best0.odMax * 1.3 + 20 && c.ar > best.ar * 1.08 && (c.ar > best.ar || c.score > best.score)) best = c;
+  if (!best || best.mean < .45 || best.mn < .2) return null;
+  // rifinitura sub-pixel: ogni lato viene ricalcolato con i punti di bordo vicini (minimi quadrati totali)
+  const q = best.q, lines = [];
+  for (let s = 0; s < 4; s++) {
+    const P = q[s], Q = q[(s + 1) % 4], L = Math.hypot(Q[0] - P[0], Q[1] - P[1]);
+    const ux = (Q[0] - P[0]) / L, uy = (Q[1] - P[1]) / L, nx = -uy, ny = ux;
+    let sw = 0, sx = 0, sy = 0; const pts = [];
+    for (let k = 0; k <= L; k++) for (let o = -3; o <= 3; o++) {
+      if (k < L * .06 || k > L * .94) continue; // lontano dagli angoli
+      const x = Math.round(P[0] + ux * k + nx * o), y = Math.round(P[1] + uy * k + ny * o);
+      if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+      const p = y * W + x; if (!E[p]) continue;
+      if (Math.abs(Math.cos(ang[p]) * nx + Math.sin(ang[p]) * ny) < .94) continue;
+      const w = mag[p]; pts.push([x, y, w]); sw += w; sx += x * w; sy += y * w;
+    }
+    if (pts.length < L * .3) { lines.push(null); continue; }
+    const mx = sx / sw, my = sy / sw; let a = 0, b = 0, c = 0;
+    for (const [x, y, w] of pts) { a += w * (x - mx) * (x - mx); b += w * (x - mx) * (y - my); c += w * (y - my) * (y - my); }
+    const th = .5 * Math.atan2(2 * b, a - c); // direzione della retta
+    let dx = Math.cos(th), dy = Math.sin(th);
+    if (Math.abs(dx * ux + dy * uy) < .985) { lines.push(null); continue; } // troppo diversa: tieni quella di Hough
+    lines.push([mx, my, dx, dy]);
+  }
+  const meet = (l1, l2) => { const det = l1[2] * l2[3] - l1[3] * l2[2]; if (Math.abs(det) < 1e-6) return null; const t = ((l2[0] - l1[0]) * l2[3] - (l2[1] - l1[1]) * l2[2]) / det; return [l1[0] + l1[2] * t, l1[1] + l1[3] * t]; };
+  const fin = q.map(p => p.slice());
+  for (let s = 0; s < 4; s++) {
+    const prev = (s + 3) % 4, Lp = lines[prev] || [q[prev][0], q[prev][1], q[s][0] - q[prev][0], q[s][1] - q[prev][1]], Ls = lines[s] || [q[s][0], q[s][1], q[(s + 1) % 4][0] - q[s][0], q[(s + 1) % 4][1] - q[s][1]];
+    const m = meet(Lp, Ls); if (m && Math.hypot(m[0] - q[s][0], m[1] - q[s][1]) < Math.min(W, H) * .04) fin[s] = m;
+  }
+  return fin.map(([x, y]) => [Math.min(1, Math.max(0, x / W)), Math.min(1, Math.max(0, y / H))]);
+}
 function detectCorners(src) {
+  // prima le linee dritte (preciso anche con foglio e tavolo dello stesso colore), poi il vecchio metodo come riserva
+  try {
+    const S = 360, sc = Math.min(1, S / Math.max(src.width, src.height));
+    const w = Math.max(8, Math.round(src.width * sc)), h = Math.max(8, Math.round(src.height * sc));
+    const c = mk(w, h), x = ctx2d(c); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h);
+    const d = x.getImageData(0, 0, w, h).data; free(c);
+    const q = detectQuad(d, w, h);
+    if (q) return q;
+  } catch (e) { console.warn(e); }
+  return detectCornersOtsu(src);
+}
+function detectCornersOtsu(src) {
   const S = 256, sc = Math.min(1, S / Math.max(src.width, src.height));
   const w = Math.max(2, Math.round(src.width * sc)), h = Math.max(2, Math.round(src.height * sc));
   const c = mk(w, h), x = ctx2d(c); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h);
@@ -799,53 +983,41 @@ async function ocrText(blob) {
   try { const { data } = await (await getOCR()).recognize(c); return data.text || ''; }
   finally { free(c); }
 }
+// Solo tipi riconoscibili con sicurezza: se non è chiaro, resta un nome generico (meglio che un nome sbagliato)
+// [nome, con data, parole decisive, indizi, è un documento d'identità (poco testo)]
 const DOC_TYPES = [
-  ["Carta d'identità", false, [/CARTA D.?IDENTITA/, /IDENTITY CARD/, /CARTE D.?IDENTITE/], [/REPUBBLICA ITALIANA/, /COMUNE DI/, /LUOGO E DATA DI NASCITA|LUOGO DI NASCITA/, /STATURA/, /CITTADINANZA/, /SCADENZA/]],
-  ['Patente', false, [/PATENTE DI GUIDA/, /DRIVING LICEN/], [/MINISTERO DELLE INFRASTRUTTURE|MIT.?UCO/, /\b4[ABC]\b/, /\bCATEGORI/]],
-  ['Passaporto', false, [/PASSAPORTO/, /PASSPORT/], [/P<ITA/, /AUTORITA/]],
-  ['Tessera sanitaria', false, [/TESSERA SANITARIA/, /TESSERA EUROPEA/, /HEALTH INSURANCE CARD/], [/CODICE FISCALE/, /SERVIZIO SANITARIO/]],
-  ['Permesso di soggiorno', false, [/PERMESSO DI SOGGIORNO/, /RESIDENCE PERMIT/], []],
-  ['Ricetta', true, [/RICETTA ELETTRONICA/, /PROMEMORIA PER L.?ASSISTITO/, /RICETTA MEDICA/], [/PRESCRIZIONE/, /ESENZIONE/, /\bNRE\b/, /SERVIZIO SANITARIO NAZIONALE/]],
-  ['Certificato medico', true, [/CERTIFICATO MEDICO/, /CERTIFICATO DI MALATTIA/, /CERTIFICATO DI IDONEITA/], [/PROGNOSI/, /DIAGNOSI/]],
-  ['Referto', true, [/REFERTO/], [/ESAME|ESAMI/, /LABORATORIO/, /EMOCROMO/, /ECOGRAFI/, /RADIOLOG/, /DIAGNOSI/, /VALORI DI RIFERIMENTO/]],
-  ['Busta paga', true, [/CEDOLINO/, /BUSTA PAGA/, /NETTO IN BUSTA/], [/RETRIBUZIONE/, /COMPETENZE/, /TRATTENUTE/, /INPS/]],
-  ['Bolletta', true, [/BOLLETTA/], [/\bKWH\b/, /\bSMC\b/, /CONSUMI/, /FORNITURA/, /POD\b|PDR\b/, /ENEL|A2A|HERA|EDISON|PLENITUDE|IREN|SORGENIA|ACEA|FASTWEB|\bTIM\b|VODAFONE|WINDTRE|ILIAD/]],
-  ['Multa', true, [/VERBALE DI ACCERTAMENTO/, /VERBALE DI CONTESTAZIONE/], [/CODICE DELLA STRADA/, /VIOLAZIONE/, /POLIZIA/]],
-  ['Fattura', true, [/FATTURA/], [/IMPONIBILE/, /PARTITA IVA|P\.? ?IVA/, /ALIQUOTA/]],
-  ['Ricevuta POS', true, [/TRANSAZIONE APPROVATA/, /\bACQUISTO\b.*\n?.*(MASTERCARD|VISA|MAESTRO|BANCOMAT|PAGOBANCOMAT)/], [/MASTERCARD|VISA|MAESTRO|PAGOBANCOMAT/, /IMPORTO EUR/, /\bA\.?I\.?I\.?C\b|\bSTAN\b|\bPAN\b/, /AUT\.?/]],
-  ['Scontrino', true, [/DOCUMENTO COMMERCIALE/, /SCONTRINO/], [/TOTALE COMPLESSIVO/, /CONTANTI/, /\bRESTO\b/, /PAGAMENTO ELETTRONICO/]],
-  ['Ricevuta', true, [/RICEVUTA/], [/PAGAMENTO/, /IMPORTO/]],
-  ['Contratto', true, [/CONTRATTO/], [/TRA LE PARTI/, /SI CONVIENE/, /SOTTOSCRITT/, /CLAUSOL/]],
-  ['Certificato', true, [/CERTIFICATO/, /ATTESTATO/], [/SI CERTIFICA|SI ATTESTA/]],
-  ['Diploma', false, [/DIPLOMA DI/, /DIPLOMA$/m], [/CONFERISCE|CONSEGUITO/]],
-  ['Lettera', true, [], [/GENTILE|EGREGI/, /CORDIALI SALUTI|DISTINTI SALUTI/, /OGGETTO:/]]
+  ["Carta d'identità", false, [/CARTA D.?IDENTITA/, /IDENTITY CARD/, /CARTE D.?IDENTITE/], [/REPUBBLICA ITALIANA/, /COMUNE DI/, /LUOGO E DATA DI NASCITA|LUOGO DI NASCITA/, /STATURA/, /CITTADINANZA/, /SCADENZA/], true],
+  ['Patente', false, [/PATENTE DI GUIDA/, /DRIVING LICEN/], [/MINISTERO DELLE INFRASTRUTTURE|MIT.?UCO/, /\b4[ABC]\b/, /\bCATEGORI/], true],
+  ['Passaporto', false, [/PASSAPORTO/, /PASSPORT/], [/P<[A-Z]{3}/, /AUTORITA/, /DATA DI RILASCIO|DATE OF ISSUE/, /COGNOME|SURNAME/], true],
+  ['Tessera sanitaria', false, [/TESSERA SANITARIA/, /TESSERA EUROPEA/, /HEALTH INSURANCE CARD/], [/CODICE FISCALE/, /SERVIZIO SANITARIO/, /DATA DI SCADENZA|SCADENZA/], true],
+  ['Permesso di soggiorno', false, [/PERMESSO DI SOGGIORNO/, /RESIDENCE PERMIT/], [/QUESTURA|QUESTORE/, /SCADENZA/], true],
+  ['Ricetta', true, [/RICETTA ELETTRONICA/, /PROMEMORIA PER L.?ASSISTITO/], [/PRESCRIZIONE/, /ESENZIONE/, /\bNRE\b/, /SERVIZIO SANITARIO NAZIONALE/], false],
+  ['Busta paga', true, [/CEDOLINO/, /BUSTA PAGA/, /NETTO IN BUSTA/], [/RETRIBUZIONE/, /COMPETENZE/, /TRATTENUTE/, /INPS/], false],
+  ['Bolletta', true, [/BOLLETTA/], [/\bKWH\b/, /\bSMC\b/, /CONSUMI/, /FORNITURA/, /POD\b|PDR\b/, /ENEL|A2A|HERA|EDISON|PLENITUDE|IREN|SORGENIA|ACEA|FASTWEB|\bTIM\b|VODAFONE|WINDTRE|ILIAD/], false],
+  ['Multa', true, [/VERBALE DI ACCERTAMENTO/, /VERBALE DI CONTESTAZIONE/], [/CODICE DELLA STRADA/, /VIOLAZIONE/, /POLIZIA/], false],
+  ['Fattura', true, [/FATTURA/], [/IMPONIBILE/, /PARTITA IVA|P\.? ?IVA/, /ALIQUOTA/], false],
+  ['Scontrino', true, [/DOCUMENTO COMMERCIALE/, /SCONTRINO/], [/TOTALE COMPLESSIVO/, /CONTANTI/, /\bRESTO\b/, /PAGAMENTO ELETTRONICO/], false]
 ];
 const PROVIDERS = ['Enel', 'A2A', 'Hera', 'Edison', 'Plenitude', 'Iren', 'Sorgenia', 'Acea', 'Fastweb', 'TIM', 'Vodafone', 'WindTre', 'Iliad'];
 function normText(t) { return t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`´]/g, "'").toUpperCase().replace(/[ \t]+/g, ' '); }
 function nameFromText(raw) {
-  const T = normText(raw);
+  const T = normText(raw), head = T.slice(0, Math.max(300, T.length * .3));
+  const words = (T.match(/[A-Z]{3,}/g) || []).length;
   let best = null, bestScore = 0;
-  for (const [name, withDate, strong, weak] of DOC_TYPES) {
-    let s = 0;
-    strong.forEach(r => { if (r.test(T)) s += 3; });
-    weak.forEach(r => { if (r.test(T)) s += 1; });
+  for (const [name, withDate, strong, weak, isId] of DOC_TYPES) {
+    // la parola decisiva deve stare in alto (titolo), non citata in mezzo al testo
+    const st = strong.filter(r => r.test(head)).length;
+    if (!st) continue;
+    const wk = weak.filter(r => r.test(T)).length;
+    if (wk < 2) continue;                 // servono almeno due conferme
+    if (isId && words > 160) continue;    // un documento d'identità ha poco testo, una pagina piena no
+    const s = st * 3 + wk;
     if (s > bestScore) { bestScore = s; best = [name, withDate]; }
   }
-  if (best && bestScore >= 3) {
-    let [name, withDate] = best;
-    if (name === 'Bolletta') { const pv = PROVIDERS.find(p => new RegExp('\\b' + p.toUpperCase() + '\\b').test(T)); if (pv) name += ' ' + pv; }
-    return withDate ? `${name} ${todayStr()}` : name;
-  }
-  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean).slice(0, 10);
-  for (const l of lines) {
-    const letters = (l.match(/[A-Za-zÀ-ÿ]/g) || []).length;
-    const words = l.split(/\s+/).filter(w => /[A-Za-zÀ-ÿ]{3,}/.test(w)).length;
-    if (l.length >= 8 && l.length <= 42 && letters / l.length > 0.8 && words >= 2) {
-      const t = l.toLowerCase().replace(/\s+/g, ' ').replace(/[^\p{L}\p{N} '’.-]/gu, '').trim();
-      if (t.length >= 8) return t.charAt(0).toUpperCase() + t.slice(1);
-    }
-  }
-  return null;
+  if (!best) return null; // nome generico (Scansione + data)
+  let [name, withDate] = best;
+  if (name === 'Bolletta') { const pv = PROVIDERS.find(p => new RegExp('\\b' + p.toUpperCase() + '\\b').test(T)); if (pv) name += ' ' + pv; }
+  return withDate ? `${name} ${todayStr()}` : name;
 }
 async function autoNameMaybe(doc, force = false) {
   if (!doc) return;
