@@ -14,7 +14,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
+  color-scheme:dark;
   --bg:#070b14;
+  --panel:#0b1020;
   --glass:rgba(255,255,255,.075);
   --stroke:rgba(255,255,255,.16);
   --text:#f3f5fb;
@@ -22,16 +24,18 @@
   --accent:#8ea6ff;
   --accent2:#5ee8cf;
   --danger:#ff6b81;
+  --st:env(safe-area-inset-top,0px);
+  --sb:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+html,body{height:100%;background:var(--bg)}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,sans-serif;color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-user-select:none;user-select:none;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation}
 button:disabled{opacity:.35;pointer-events:none}
 .hidden{display:none!important}
 svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
 
-/* background */
+/* sfondo */
 .bg{position:fixed;inset:0;overflow:hidden;z-index:0;background:
   radial-gradient(1100px 760px at 8% -12%,#1b2558 0%,transparent 60%),
   radial-gradient(900px 700px at 112% 112%,#0d3a44 0%,transparent 55%),var(--bg)}
@@ -43,60 +47,106 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 @media (prefers-reduced-motion:reduce){.bg i{animation:none}}
 
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);border:1px solid var(--stroke);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
-
 .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column}
-
-/* home */
-.top{margin:calc(env(safe-area-inset-top) + 12px) 14px 0;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:8px;position:relative;z-index:2}
-.title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.doc-name{background:none;border:0;color:var(--text);font:inherit;font-size:19px;font-weight:650;letter-spacing:-.01em;outline:none;width:100%;text-overflow:ellipsis;-webkit-user-select:text;user-select:text}
+.panel{z-index:3;background:radial-gradient(900px 600px at 0% -10%,#141c40 0%,transparent 60%),radial-gradient(800px 600px at 110% 110%,#0b2a33 0%,transparent 55%),var(--bg);animation:slide .28s cubic-bezier(.2,.9,.3,1)}
+@keyframes slide{from{transform:translateX(30px);opacity:0}}
 .muted{color:var(--muted);font-size:13px}
-.icon-btn{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);transition:transform .15s,background .2s}
+
+/* barre */
+.bar{display:flex;align-items:center;gap:10px;padding:calc(var(--st) + 12px) 16px 10px;position:relative;z-index:2;flex:0 0 auto}
+.bar h2{font-size:22px;font-weight:700;letter-spacing:-.02em;flex:1}
+.brand{flex:1;display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.brand img{width:34px;height:34px;border-radius:10px;box-shadow:0 4px 16px rgba(94,140,255,.35)}
+.icon-btn{position:relative;width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);transition:transform .15s,background .2s;flex:0 0 auto}
 .icon-btn:active{transform:scale(.92)}
 .icon-btn.on{background:var(--accent);color:#0b1020;border-color:transparent}
 .icon-btn.auto{color:var(--accent2);border-color:rgba(94,232,207,.35);background:rgba(94,232,207,.1)}
 .icon-btn.working svg{animation:twinkle 1s ease-in-out infinite alternate}
 @keyframes twinkle{from{opacity:.35;transform:scale(.85) rotate(-10deg)}to{opacity:1;transform:scale(1.1) rotate(10deg)}}
+.badge{position:absolute;top:-5px;right:-5px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--accent2);color:#06201b;font-size:11px;font-weight:700;display:grid;place-items:center}
+.pill{height:38px;padding:0 16px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font-weight:600;font-size:15px;transition:transform .15s;flex:0 0 auto}
+.pill:active{transform:scale(.94)}
+.pill.accent{background:linear-gradient(135deg,#8ea6ff,#5ee8cf);color:#081020;border-color:transparent}
 
-.grid{flex:1;overflow-y:auto;padding:16px 14px calc(140px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px;align-content:start;-webkit-overflow-scrolling:touch}
-.card{position:relative;padding:8px;border-radius:20px;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both;cursor:pointer}
-.card:active{transform:scale(.97)}
-.card img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.45);display:block}
-.num{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:650;padding:3px 10px;border-radius:99px;background:rgba(10,14,25,.6);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15)}
-.card-actions{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between}
-.card-actions button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(15,20,35,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2)}
-.card-actions button svg.i{width:18px;height:18px}
-.card-actions .del{background:rgba(255,80,105,.85);border-color:transparent}
-.editing .card{animation:jiggle .28s ease-in-out infinite alternate}
-.editing .card:nth-child(2n){animation-delay:-.14s}
-@keyframes jiggle{from{transform:rotate(-.6deg)}to{transform:rotate(.6deg)}}
-@keyframes pop{from{opacity:0;transform:scale(.92) translateY(10px)}}
-
-.empty{position:absolute;inset:0;display:grid;place-items:center;padding:24px;pointer-events:none}
-.empty-card{max-width:320px;padding:34px 26px;text-align:center}
-.empty-ic{width:68px;height:68px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(142,166,255,.38),rgba(94,232,207,.26));border:1px solid rgba(255,255,255,.2)}
-.empty-ic svg.i{width:32px;height:32px}
-.empty-card h2{font-size:20px;font-weight:650;margin-bottom:8px}
-.empty-card p{color:var(--muted);font-size:14px;line-height:1.5}
-
-.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);display:flex;align-items:center;gap:26px;padding:10px 26px;border-radius:34px;z-index:2}
-.dock-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;font-weight:550;color:var(--muted);width:58px;transition:transform .15s}
+/* home */
+.hero-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 20px calc(var(--sb) + 130px);min-height:0}
+.hero{width:100%;max-width:360px;padding:34px 26px;text-align:center}
+.hero-ic{width:76px;height:76px;margin:0 auto 18px;border-radius:24px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(142,166,255,.38),rgba(94,232,207,.26));border:1px solid rgba(255,255,255,.2)}
+.hero-ic svg.i{width:36px;height:36px}
+.hero h1{font-size:21px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px}
+.hero p{color:var(--muted);font-size:14.5px;line-height:1.5}
+.session{width:100%;max-width:360px;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;animation:pop .3s cubic-bezier(.2,.9,.3,1.2) both}
+.sess-thumbs{position:relative;width:44px;height:56px;flex:0 0 auto}
+.sess-thumbs img{position:absolute;width:40px;height:52px;object-fit:cover;object-position:top;border-radius:7px;border:1.5px solid rgba(255,255,255,.7);background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.sess-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sess-info strong{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session .pill{height:34px;padding:0 13px;font-size:14px}
+.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 16px);display:flex;align-items:center;gap:26px;padding:10px 26px;border-radius:34px;z-index:2}
+.dock-btn{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;font-weight:550;color:var(--muted);width:58px;transition:transform .15s}
 .dock-btn:active{transform:scale(.9)}
 .dock-btn svg.i{color:var(--text)}
+.dock-btn .badge{top:-6px;right:6px}
 .shutter{width:72px;height:72px;border-radius:50%;padding:5px;background:linear-gradient(135deg,#9fb4ff,#5ee8cf);box-shadow:0 8px 30px rgba(94,140,255,.45)}
 .shutter span{display:block;width:100%;height:100%;border-radius:50%;background:#fff;border:3px solid rgba(10,14,25,.85);transition:transform .15s}
 .shutter:active span{transform:scale(.88)}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}}
+
+/* archivio */
+.search{margin:4px 16px 8px;display:flex;align-items:center;gap:10px;padding:0 14px;height:44px;border-radius:14px;flex:0 0 auto}
+.search input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--text);font:inherit;font-size:15px;-webkit-user-select:text;user-select:text}
+.search input::placeholder{color:var(--muted)}
+.list{flex:1;overflow-y:auto;padding:4px 16px calc(var(--sb) + 30px);-webkit-overflow-scrolling:touch}
+.group{font-size:12.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px}
+.row{width:100%;display:flex;align-items:center;gap:14px;padding:10px 12px 10px 10px;border-radius:18px;text-align:left;margin-bottom:8px;transition:transform .15s,background .2s}
+.row:active{transform:scale(.985);background:rgba(255,255,255,.12)}
+.row-th{width:48px;height:62px;border-radius:9px;overflow:hidden;background:#fff;flex:0 0 auto;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.row-th img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.row-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.row-info strong{font-size:15.5px;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row svg.i{color:var(--muted);width:18px;height:18px}
+.empty-small{flex:1;display:grid;place-content:center;text-align:center;gap:8px;padding:40px 30px calc(var(--sb) + 80px);color:var(--muted);font-size:14.5px;line-height:1.5}
+.empty-small strong{color:var(--text);font-size:17px}
+
+/* documento */
+.doc-bar{margin:calc(var(--st) + 10px) 12px 0;padding:8px;gap:6px}
+.title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding-left:4px}
+.doc-name{background:none;border:0;color:var(--text);font:inherit;font-size:18px;font-weight:650;letter-spacing:-.01em;outline:none;width:100%;text-overflow:ellipsis;-webkit-user-select:text;user-select:text}
+.grid{flex:1;overflow-y:auto;padding:16px 14px calc(var(--sb) + 120px);display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px;align-content:start;-webkit-overflow-scrolling:touch}
+.card{position:relative;border-radius:20px;aspect-ratio:3/4;overflow:hidden;animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both;cursor:pointer;contain:paint}
+.card:active{transform:scale(.97)}
+.card img{position:absolute;inset:10px 10px 34px;width:calc(100% - 20px);height:calc(100% - 44px);object-fit:contain;display:block;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+.num{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:650;padding:2px 10px;border-radius:99px;background:rgba(10,14,25,.6);border:1px solid rgba(255,255,255,.15)}
+.card-actions{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;z-index:1}
+.card-actions button{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(15,20,35,.8);border:1px solid rgba(255,255,255,.2)}
+.card-actions button svg.i{width:18px;height:18px}
+.card-actions .del{background:rgba(255,80,105,.9);border-color:transparent}
+.editing .card{animation:jiggle .28s ease-in-out infinite alternate}
+.editing .card:nth-child(2n){animation-delay:-.14s}
+@keyframes jiggle{from{transform:rotate(-.6deg)}to{transform:rotate(.6deg)}}
+.actions{position:fixed;left:12px;right:12px;bottom:calc(var(--sb) + 14px);display:flex;justify-content:space-around;padding:8px 6px;border-radius:26px;z-index:2;max-width:520px;margin:0 auto}
+.act{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;font-weight:550;color:var(--muted);min-width:58px;padding:6px 4px;border-radius:14px;transition:transform .15s}
+.act svg.i{color:var(--text)}
+.act:active{transform:scale(.9)}
+.act.danger svg.i{color:var(--danger)}
+
+/* visualizzatore */
+.viewer{z-index:4;background:#05070d;animation:fade .2s}
+.v-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(var(--st) + 10px) 12px 8px;position:relative;z-index:2}
+.v-title{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
+.v-title strong{font-size:15px;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v-track{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;min-height:0;overscroll-behavior-x:contain}
+.v-track::-webkit-scrollbar{display:none}
+.v-slide{flex:0 0 100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;padding:12px 16px}
+.v-slide img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 20px 60px rgba(0,0,0,.6);background:#fff}
+.v-tools{display:flex;justify-content:space-around;margin:6px 12px calc(var(--sb) + 14px);padding:8px 4px;border-radius:26px;position:relative;z-index:2}
 
 /* editor */
-.editor{z-index:5;background:rgba(5,7,14,.9);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px);animation:fade .2s}
-.ed-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(env(safe-area-inset-top) + 10px) 12px 8px}
-.pill{height:38px;padding:0 15px;border-radius:99px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);font-weight:600;font-size:15px;transition:transform .15s}
-.pill:active{transform:scale(.94)}
-.pill.accent{background:linear-gradient(135deg,#8ea6ff,#5ee8cf);color:#081020;border-color:transparent}
+.editor{z-index:6;background:#05070d;animation:fade .2s}
+.ed-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(var(--st) + 10px) 12px 8px;position:relative;z-index:3;flex:0 0 auto}
 .seg{display:flex;padding:4px;border-radius:99px;gap:2px}
 .seg button{flex:1;padding:7px 14px;border-radius:99px;font-size:14px;font-weight:600;color:var(--muted);transition:background .2s,color .2s;white-space:nowrap}
 .seg button.on{background:rgba(255,255,255,.18);color:var(--text)}
-.stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;touch-action:none;overflow:hidden;min-height:0}
+.stage{flex:1;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;touch-action:none;overflow:hidden;min-height:0}
 .crop-box{position:relative}
 .crop-box canvas{display:block;border-radius:3px}
 #cropSvg{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
@@ -104,7 +154,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .loupe{position:absolute;top:14px;left:14px;width:120px;height:120px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(0,0,0,.55);pointer-events:none}
 .loupe.right{left:auto;right:14px}
 .loupe canvas{width:100%;height:100%;display:block}
-.ed-tools{padding:8px 14px calc(env(safe-area-inset-bottom) + 16px);display:flex;flex-direction:column;gap:12px}
+.ed-tools{padding:8px 14px calc(var(--sb) + 16px);display:flex;flex-direction:column;gap:12px;position:relative;z-index:3;flex:0 0 auto}
 .tool-row{display:flex;justify-content:center;gap:12px}
 .tool{display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .15s}
 .tool:active{transform:scale(.94)}
@@ -118,75 +168,117 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .chip.on{color:var(--text)}
 .chip.on .th{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(94,232,207,.22)}
 
-/* sheet & modal */
-.overlay{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.4);animation:fade .2s}
+/* sheet, modale, avvisi */
+.overlay{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.45);animation:fade .2s}
 .sheet-wrap{display:flex;align-items:flex-end;justify-content:center}
-.sheet{width:100%;max-width:520px;margin:0 10px calc(env(safe-area-inset-bottom) + 10px);padding:10px 16px 16px;border-radius:28px;background:rgba(28,34,54,.62);animation:up .32s cubic-bezier(.2,.9,.3,1)}
+.sheet{width:100%;max-width:520px;margin:0 10px calc(var(--sb) + 10px);padding:10px 16px 16px;border-radius:28px;background:rgba(28,34,54,.72);animation:up .32s cubic-bezier(.2,.9,.3,1)}
 .grab{width:40px;height:5px;border-radius:9px;background:rgba(255,255,255,.3);margin:4px auto 14px}
 .sheet h3{font-size:17px;font-weight:650;margin:0 4px 12px}
 .sheet .seg{margin-bottom:6px}
 .row-btn{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);margin-top:8px;font-size:15px;font-weight:560;text-align:left;transition:transform .15s,background .2s}
 .row-btn:active{transform:scale(.98);background:rgba(255,255,255,.12)}
-.row-btn .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(142,166,255,.2)}
+.row-btn .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(142,166,255,.2);flex:0 0 auto}
 .row-btn small{display:block;color:var(--muted);font-size:12px;font-weight:450;margin-top:1px}
-.modal-wrap{display:grid;place-items:center;padding:24px}
-.modal{width:100%;max-width:330px;padding:22px;text-align:center;background:rgba(28,34,54,.66);animation:up .25s cubic-bezier(.2,.9,.3,1)}
+.modal-wrap{display:grid;place-items:center;padding:24px;z-index:9}
+.modal{width:100%;max-width:330px;padding:22px;text-align:center;background:rgba(28,34,54,.78);animation:up .25s cubic-bezier(.2,.9,.3,1)}
 .modal p{font-size:16px;line-height:1.45;margin-bottom:18px}
 .modal-btns{display:flex;gap:10px}
 .modal-btns button{flex:1;height:44px;border-radius:14px;font-weight:600;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
 .modal-btns .danger{background:var(--danger);border-color:transparent;color:#fff}
-
-.busy{position:fixed;inset:0;z-index:20;display:grid;place-content:center;justify-items:center;gap:14px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:14px;font-weight:550}
+.busy{position:fixed;inset:0;z-index:20;display:grid;place-content:center;justify-items:center;gap:14px;background:rgba(0,0,0,.5);font-size:14px;font-weight:550}
 .spinner{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:var(--accent2);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 112px);transform:translate(-50%,20px);z-index:30;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:550;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;background:rgba(28,34,54,.75);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--stroke);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;left:50%;bottom:calc(var(--sb) + 118px);transform:translate(-50%,20px);z-index:30;padding:11px 18px;border-radius:99px;font-size:14px;font-weight:550;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;background:rgba(28,34,54,.85);border:1px solid var(--stroke);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @keyframes fade{from{opacity:0}}
 @keyframes up{from{transform:translateY(40px);opacity:0}}
-@media (min-width:720px){.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));padding-left:28px;padding-right:28px}.top{margin-left:28px;margin-right:28px}}
+@media (min-width:720px){.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));padding-left:28px;padding-right:28px}.list{max-width:720px;width:100%;margin:0 auto}.search{max-width:688px;width:calc(100% - 32px);margin-left:auto;margin-right:auto}}
 </style>
 </head>
 <body>
 <div class="bg"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
 
-<!-- HOME -->
+<!-- HOME: solo scansione -->
 <div id="home" class="screen">
-  <header class="top glass">
-    <div class="title-wrap">
-      <input id="docName" class="doc-name" spellcheck="false" autocomplete="off" aria-label="Nome documento">
-      <span id="pageCount" class="muted">0 pagine</span>
-    </div>
-    <button id="autoNameBtn" class="icon-btn" aria-label="Nome automatico" title="Riconosci e rinomina">
-      <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
-    </button>
-    <button id="editBtn" class="icon-btn" aria-label="Riordina pagine">
-      <svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
-    </button>
-    <button id="clearBtn" class="icon-btn" aria-label="Svuota documento">
-      <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>
-    </button>
+  <header class="bar">
+    <div class="brand"><img id="brandIcon" alt=""><span>Scanner</span></div>
   </header>
-  <main id="grid" class="grid"></main>
-  <div id="empty" class="empty">
-    <div class="empty-card glass">
-      <div class="empty-ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 015.5 4H8M16 4h2.5A1.5 1.5 0 0120 5.5V8M20 16v2.5a1.5 1.5 0 01-1.5 1.5H16M8 20H5.5A1.5 1.5 0 014 18.5V16"/><path d="M8.5 9h7M8.5 12h7M8.5 15h4"/></svg></div>
-      <h2>Nessuna pagina</h2>
-      <p>Scatta una foto o importa immagini dalla galleria. Tutto viene elaborato e salvato solo sul tuo dispositivo.</p>
+  <main class="hero-wrap">
+    <div class="hero glass">
+      <div class="hero-ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 015.5 4H8M16 4h2.5A1.5 1.5 0 0120 5.5V8M20 16v2.5a1.5 1.5 0 01-1.5 1.5H16M8 20H5.5A1.5 1.5 0 014 18.5V16"/><path d="M4 12h16"/></svg></div>
+      <h1 id="heroTitle">Pronto a scansionare</h1>
+      <p id="heroText">Inquadra il documento e scatta. Bordi, prospettiva e nome li sistemo io.</p>
     </div>
-  </div>
+    <div id="session" class="session glass hidden">
+      <div class="sess-thumbs" id="sessThumbs"></div>
+      <div class="sess-info"><strong id="sessName"></strong><span id="sessCount" class="muted"></span></div>
+      <button id="sessOpen" class="pill">Apri</button>
+      <button id="sessDone" class="pill accent">Fine</button>
+    </div>
+  </main>
   <nav class="dock glass">
     <button id="importBtn" class="dock-btn">
       <svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg>
       <span>Importa</span>
     </button>
     <button id="shootBtn" class="shutter" aria-label="Scatta"><span></span></button>
-    <button id="exportBtn" class="dock-btn">
-      <svg class="i" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V18a2.5 2.5 0 002.5 2.5h9A2.5 2.5 0 0019 18v-5.5"/></svg>
-      <span>Esporta</span>
+    <button id="archBtn" class="dock-btn">
+      <svg class="i" viewBox="0 0 24 24"><path d="M3.5 7.5A2 2 0 015.5 5.5h4l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2h-13a2 2 0 01-2-2z"/></svg>
+      <span>Archivio</span><b id="archBadge" class="badge hidden"></b>
     </button>
   </nav>
-  <input id="camInput" type="file" accept="image/*" capture="environment" hidden>
-  <input id="fileInput" type="file" accept="image/*" multiple hidden>
+</div>
+
+<!-- ARCHIVIO -->
+<div id="archive" class="screen panel hidden">
+  <header class="bar">
+    <button id="archBack" class="icon-btn" aria-label="Indietro"><svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg></button>
+    <h2>Archivio</h2>
+    <span id="archTotal" class="muted"></span>
+    <button id="backupBtn" class="icon-btn" aria-label="Backup"><svg class="i" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 00.6-7.95A6 6 0 006.6 9.1 4.75 4.75 0 007 18.5z"/><path d="M12 15.5v-5M9.8 12.6L12 10.4l2.2 2.2"/></svg></button>
+  </header>
+  <label class="search glass"><svg class="i" viewBox="0 0 24 24" style="width:18px;height:18px;color:var(--muted)"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input id="archSearch" type="search" placeholder="Cerca per nome" autocomplete="off"></label>
+  <div id="archList" class="list"></div>
+  <div id="archEmpty" class="empty-small hidden"><strong>Nessuna scansione</strong><span>I documenti che scansioni compaiono qui, dal più recente.</span></div>
+</div>
+
+<!-- DOCUMENTO -->
+<div id="docview" class="screen panel hidden">
+  <header class="bar glass doc-bar">
+    <button id="docBack" class="icon-btn" aria-label="Indietro"><svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg></button>
+    <div class="title-wrap">
+      <input id="docName" class="doc-name" spellcheck="false" autocomplete="off" aria-label="Nome documento">
+      <span id="docMeta" class="muted"></span>
+    </div>
+    <button id="autoNameBtn" class="icon-btn" aria-label="Nome automatico">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.8 4.7 4.7 1.8-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.8z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>
+    </button>
+    <button id="editBtn" class="icon-btn" aria-label="Riordina pagine"></button>
+  </header>
+  <main id="grid" class="grid"></main>
+  <nav class="actions glass">
+    <button id="docShoot" class="act"><svg class="i" viewBox="0 0 24 24"><path d="M4 8.5A2 2 0 016 6.5h2l1.5-2h5L16 6.5h2a2 2 0 012 2V18a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Scatta</span></button>
+    <button id="docImport" class="act"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg><span>Importa</span></button>
+    <button id="docExport" class="act"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V18a2.5 2.5 0 002.5 2.5h9A2.5 2.5 0 0019 18v-5.5"/></svg><span>Esporta</span></button>
+    <button id="docDelete" class="act danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg><span>Elimina</span></button>
+  </nav>
+</div>
+
+<!-- VISUALIZZATORE PAGINA -->
+<div id="viewer" class="screen viewer hidden">
+  <header class="v-top">
+    <button id="vBack" class="icon-btn" aria-label="Chiudi"><svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg></button>
+    <div class="v-title"><strong id="vName"></strong><span id="vCount" class="muted"></span></div>
+    <span style="width:42px"></span>
+  </header>
+  <div id="vTrack" class="v-track"></div>
+  <nav class="v-tools glass">
+    <button id="vCrop" class="act"><svg class="i" viewBox="0 0 24 24"><path d="M7 3.5V17h13.5"/><path d="M3.5 7H17v13.5"/></svg><span>Ritaglia</span></button>
+    <button id="vFilter" class="act"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="10" r="5"/><circle cx="15" cy="10" r="5"/><circle cx="12" cy="15" r="5"/></svg><span>Filtro</span></button>
+    <button id="vRotate" class="act"><svg class="i" viewBox="0 0 24 24"><path d="M20 4v5h-5"/><path d="M19.4 9A8 8 0 1012 20"/></svg><span>Ruota</span></button>
+    <button id="vShare" class="act"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V18a2.5 2.5 0 002.5 2.5h9A2.5 2.5 0 0019 18v-5.5"/></svg><span>Condividi</span></button>
+    <button id="vDelete" class="act danger"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg><span>Elimina</span></button>
+  </nav>
 </div>
 
 <!-- EDITOR -->
@@ -222,7 +314,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </div>
 </div>
 
-<!-- EXPORT SHEET -->
+<!-- ESPORTA -->
 <div id="sheet" class="overlay sheet-wrap hidden">
   <div class="sheet glass">
     <div class="grab"></div>
@@ -231,13 +323,13 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <button data-size="a4" class="on">Pagina A4</button>
       <button data-size="fit">Dimensione foto</button>
     </div>
-    <button class="row-btn" id="pdfDl">
-      <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3.5H7A2.5 2.5 0 004.5 6v12A2.5 2.5 0 007 20.5h10a2.5 2.5 0 002.5-2.5V9L14 3.5z"/><path d="M14 3.5V9h5.5M12 12v5M9.5 14.5L12 17l2.5-2.5"/></svg></span>
-      <span>Scarica PDF<small>Salva il file sul dispositivo</small></span>
-    </button>
     <button class="row-btn" id="pdfShare">
       <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V18a2.5 2.5 0 002.5 2.5h9A2.5 2.5 0 0019 18v-5.5"/></svg></span>
       <span>Condividi PDF<small>WhatsApp, Mail, File…</small></span>
+    </button>
+    <button class="row-btn" id="pdfDl">
+      <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3.5H7A2.5 2.5 0 004.5 6v12A2.5 2.5 0 007 20.5h10a2.5 2.5 0 002.5-2.5V9L14 3.5z"/><path d="M14 3.5V9h5.5M12 12v5M9.5 14.5L12 17l2.5-2.5"/></svg></span>
+      <span>Scarica PDF<small>Salva il file sul dispositivo</small></span>
     </button>
     <button class="row-btn" id="jpgShare">
       <span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></span>
@@ -246,16 +338,32 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </div>
 </div>
 
-<!-- MODAL -->
+<div id="backupSheet" class="overlay sheet-wrap hidden">
+  <div class="sheet glass">
+    <div class="grab"></div>
+    <h3>Backup</h3>
+    <button class="row-btn" id="backupMake">
+      <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M7 18.5h10.5a4 4 0 00.6-7.95A6 6 0 006.6 9.1 4.75 4.75 0 007 18.5z"/><path d="M12 15.5v-5M9.8 12.6L12 10.4l2.2 2.2"/></svg></span>
+      <span>Backup su iCloud o File<small>Un unico file con tutte le scansioni. Scegli “Salva su File” → iCloud Drive</small></span>
+    </button>
+    <button class="row-btn" id="backupRestore">
+      <span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/></svg></span>
+      <span>Ripristina backup<small>Apri un file di backup salvato in precedenza</small></span>
+    </button>
+  </div>
+</div>
+<input id="restoreInput" type="file" accept=".zip,application/zip" hidden>
+
 <div id="modal" class="overlay modal-wrap hidden">
   <div class="modal glass">
     <p id="modalText"></p>
     <div class="modal-btns"><button id="modalCancel">Annulla</button><button id="modalOk" class="danger">Elimina</button></div>
   </div>
 </div>
-
 <div id="busy" class="busy hidden"><div class="spinner"></div><span id="busyText">Elaborazione…</span></div>
 <div id="toast" class="toast"></div>
+<input id="camInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="fileInput" type="file" accept="image/*" multiple hidden>
 
 <script>
 'use strict';
@@ -268,127 +376,28 @@ const ICON = {
   right:'<svg class="i" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg>',
   del:'<svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   pen:'<svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>',
-  check:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  check:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  chev:'<svg class="i" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg>'
 };
+// Area massima elaborata in un colpo (~12 MP). Se iPhone non ha memoria a sufficienza si scende in automatico.
+const AREAS = [12.6e6, 8e6, 5e6, 3e6];
 
-let pages = [], editMode = false, exportSize = 'a4', lastFilter = 'magic', docName = '';
-let autoName = true, autoFrom = null, naming = false, pendingName = false;
+let docs = [], pages = [], currentId = null, openId = null, docFrom = 'archive';
+let editMode = false, exportSize = 'a4', lastFilter = 'magic', target = null, returnTo = 'home';
+const naming = new Set();
 
-/* ---------------- nome automatico (OCR in locale) ---------------- */
-const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-let ocrWorker = null, ocrLoading = null;
-function loadScript(src) {
-  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Script non caricato')); document.head.appendChild(s); });
-}
-function getOCR() {
-  if (ocrWorker) return Promise.resolve(ocrWorker);
-  if (!ocrLoading) ocrLoading = (async () => {
-    if (!window.Tesseract) await loadScript(TESS_SRC);
-    ocrWorker = await Tesseract.createWorker('ita');
-    return ocrWorker;
-  })().catch(e => { ocrLoading = null; throw e; });
-  return ocrLoading;
-}
-async function ocrText(blob) {
-  const c = await blobToCanvas(blob, 1800);
-  const w = await getOCR();
-  const { data } = await w.recognize(c);
-  return data.text || '';
-}
-// [nome, aggiungi data?, regole forti (3 punti), regole deboli (1 punto)]
-const DOC_TYPES = [
-  ["Carta d'identità", false, [/CARTA D.?IDENTITA/, /IDENTITY CARD/, /CARTE D.?IDENTITE/], [/REPUBBLICA ITALIANA/, /COMUNE DI/, /LUOGO E DATA DI NASCITA|LUOGO DI NASCITA/, /STATURA/, /CITTADINANZA/, /SCADENZA/]],
-  ['Patente', false, [/PATENTE DI GUIDA/, /DRIVING LICEN/], [/MINISTERO DELLE INFRASTRUTTURE|MIT.?UCO/, /\b4[ABC]\b/, /\bCATEGORI/]],
-  ['Passaporto', false, [/PASSAPORTO/, /PASSPORT/], [/P<ITA/, /AUTORITA/]],
-  ['Tessera sanitaria', false, [/TESSERA SANITARIA/, /TESSERA EUROPEA/, /HEALTH INSURANCE CARD/], [/CODICE FISCALE/, /SERVIZIO SANITARIO/]],
-  ['Permesso di soggiorno', false, [/PERMESSO DI SOGGIORNO/, /RESIDENCE PERMIT/], []],
-  ['Ricetta', true, [/RICETTA ELETTRONICA/, /PROMEMORIA PER L.?ASSISTITO/, /RICETTA MEDICA/], [/PRESCRIZIONE/, /ESENZIONE/, /\bNRE\b/, /SERVIZIO SANITARIO NAZIONALE/]],
-  ['Certificato medico', true, [/CERTIFICATO MEDICO/, /CERTIFICATO DI MALATTIA/, /CERTIFICATO DI IDONEITA/], [/PROGNOSI/, /DIAGNOSI/]],
-  ['Referto', true, [/REFERTO/], [/ESAME|ESAMI/, /LABORATORIO/, /EMOCROMO/, /ECOGRAFI/, /RADIOLOG/, /DIAGNOSI/, /VALORI DI RIFERIMENTO/]],
-  ['Busta paga', true, [/CEDOLINO/, /BUSTA PAGA/, /NETTO IN BUSTA/], [/RETRIBUZIONE/, /COMPETENZE/, /TRATTENUTE/, /INPS/]],
-  ['Bolletta', true, [/BOLLETTA/], [/\bKWH\b/, /\bSMC\b/, /CONSUMI/, /FORNITURA/, /POD\b|PDR\b/, /ENEL|A2A|HERA|EDISON|PLENITUDE|IREN|SORGENIA|ACEA|FASTWEB|\bTIM\b|VODAFONE|WINDTRE|ILIAD/]],
-  ['Multa', true, [/VERBALE DI ACCERTAMENTO/, /VERBALE DI CONTESTAZIONE/], [/CODICE DELLA STRADA/, /VIOLAZIONE/, /POLIZIA/]],
-  ['Fattura', true, [/FATTURA/], [/IMPONIBILE/, /PARTITA IVA|P\.? ?IVA/, /ALIQUOTA/]],
-  ['Scontrino', true, [/DOCUMENTO COMMERCIALE/, /SCONTRINO/], [/TOTALE COMPLESSIVO/, /CONTANTI/, /\bRESTO\b/, /PAGAMENTO ELETTRONICO/]],
-  ['Ricevuta', true, [/RICEVUTA/], [/PAGAMENTO/, /IMPORTO/]],
-  ['Contratto', true, [/CONTRATTO/], [/TRA LE PARTI/, /SI CONVIENE/, /SOTTOSCRITT/, /CLAUSOL/]],
-  ['Certificato', true, [/CERTIFICATO/, /ATTESTATO/], [/SI CERTIFICA|SI ATTESTA/]],
-  ['Diploma', false, [/DIPLOMA DI/, /DIPLOMA$/m], [/CONFERISCE|CONSEGUITO/]],
-  ['Lettera', true, [], [/GENTILE|EGREGI/, /CORDIALI SALUTI|DISTINTI SALUTI/, /OGGETTO:/]]
-];
-const PROVIDERS = ['Enel', 'A2A', 'Hera', 'Edison', 'Plenitude', 'Iren', 'Sorgenia', 'Acea', 'Fastweb', 'TIM', 'Vodafone', 'WindTre', 'Iliad'];
-function normText(t) {
-  return t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`´]/g, "'").toUpperCase().replace(/[ \t]+/g, ' ');
-}
-function todayStr() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`; }
-function nameFromText(raw) {
-  const T = normText(raw);
-  let best = null, bestScore = 0;
-  for (const [name, withDate, strong, weak] of DOC_TYPES) {
-    let s = 0;
-    strong.forEach(r => { if (r.test(T)) s += 3; });
-    weak.forEach(r => { if (r.test(T)) s += 1; });
-    if (s > bestScore) { bestScore = s; best = [name, withDate]; }
-  }
-  if (best && bestScore >= 3) {
-    let [name, withDate] = best;
-    if (name === 'Bolletta') { const pv = PROVIDERS.find(p => new RegExp('\\b' + p.toUpperCase() + '\\b').test(T)); if (pv) name += ' ' + pv; }
-    return withDate ? `${name} ${todayStr()}` : name;
-  }
-  // nessun tipo riconosciuto: usa la prima riga che sembra un titolo
-  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean).slice(0, 10);
-  for (const l of lines) {
-    const letters = (l.match(/[A-Za-zÀ-ÿ]/g) || []).length;
-    if (l.length >= 6 && l.length <= 42 && letters / l.length > 0.75 && /\s/.test(l)) {
-      const t = l.toLowerCase().replace(/\s+/g, ' ').replace(/[^\p{L}\p{N} '’.-]/gu, '').trim();
-      if (t.length >= 6) return t.charAt(0).toUpperCase() + t.slice(1);
-    }
-  }
-  return null;
-}
-function saveNameMeta() { safe(store.set('name', docName)); safe(store.set('autoName', autoName)); safe(store.set('autoFrom', autoFrom)); }
-async function autoNameMaybe(force = false) {
-  if (force) { autoName = true; autoFrom = null; }
-  if (!autoName) return;
-  const first = sorted()[0];
-  if (!first || first.id === autoFrom) return;
-  if (naming) { pendingName = true; return; }
-  naming = true; updateHeader();
-  try {
-    const name = nameFromText(await ocrText(first.processed));
-    if (autoName) {
-      autoFrom = first.id;
-      if (name) { docName = name; $('#docName').value = docName; toast('Riconosciuto: ' + name); }
-      else if (force) toast('Tipo di documento non riconosciuto');
-      saveNameMeta();
-    }
-  } catch (e) {
-    console.warn(e);
-    if (force) toast('Riconoscimento non disponibile: serve internet la prima volta');
-  } finally {
-    naming = false; updateHeader();
-    if (pendingName) { pendingName = false; autoNameMaybe(); }
-  }
-}
-function updateHeader() {
-  const n = pages.length;
-  $('#pageCount').textContent = (n === 1 ? '1 pagina' : `${n} pagine`) + (naming ? ' · riconosco il documento…' : '');
-  const b = $('#autoNameBtn');
-  b.classList.toggle('auto', autoName);
-  b.classList.toggle('working', naming);
-}
-
-/* ---------------- storage (IndexedDB, solo locale) ---------------- */
+/* ---------------- archivio locale (IndexedDB) ---------------- */
 const store = {
   db: null,
   async open() {
     if (!('indexedDB' in window)) return;
     this.db = await new Promise((res, rej) => {
-      const r = indexedDB.open('glass-scan', 1);
+      const r = indexedDB.open('glass-scan', 2);
       r.onupgradeneeded = () => {
         const db = r.result;
         if (!db.objectStoreNames.contains('pages')) db.createObjectStore('pages', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta');
+        if (!db.objectStoreNames.contains('docs')) db.createObjectStore('docs', { keyPath: 'id' });
       };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
@@ -404,56 +413,52 @@ const store = {
       t.onabort = () => rej(t.error);
     });
   },
-  all() { return this.req('pages', 'readonly', s => s.getAll()); },
-  put(p) { return this.req('pages', 'readwrite', s => s.put(p)); },
-  del(id) { return this.req('pages', 'readwrite', s => s.delete(id)); },
-  clear() { return this.req('pages', 'readwrite', s => s.clear()); },
+  all(n) { return this.req(n, 'readonly', s => s.getAll()); },
+  put(n, v) { return this.req(n, 'readwrite', s => s.put(v)); },
+  del(n, id) { return this.req(n, 'readwrite', s => s.delete(id)); },
   get(k) { return this.req('meta', 'readonly', s => s.get(k)); },
   set(k, v) { return this.req('meta', 'readwrite', s => s.put(v, k)); }
 };
 const safe = p => Promise.resolve(p).catch(e => { console.warn(e); return null; });
 
-/* ---------------- helpers ---------------- */
+/* ---------------- immagini ---------------- */
 function mk(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
-function ctx2d(c) { return c.getContext('2d', { willReadFrequently: true }); }
+function free(c) { if (c && c.width) { c.width = 0; c.height = 0; } } // su iPhone libera subito la memoria del canvas
+function ctx2d(c) { const x = c.getContext('2d', { willReadFrequently: true }); if (!x) throw new Error('Memoria grafica esaurita'); return x; }
 function loadImg(src) {
   return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Immagine non leggibile')); i.src = src; });
 }
-function imgToCanvas(img, max) {
-  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
-  const s = Math.min(1, max / Math.max(w0, h0), Math.sqrt(MAX_AREA / (w0 * h0)));
-  const c = mk(Math.round(w0 * s), Math.round(h0 * s));
-  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
-  return c;
+function fitSize(w, h, maxSide, maxArea) {
+  const s = Math.min(1, maxSide / Math.max(w, h), Math.sqrt(maxArea / (w * h)));
+  return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
 }
-const MAX_AREA = 12.6e6; // ~12 MP: risoluzione piena delle fotocamere da 12 MP, entro i limiti dei canvas su iPhone
-async function blobToCanvas(blob, max = 6000) {
+async function blobToCanvas(blob, maxArea = AREAS[0], maxSide = 6000) {
   const url = URL.createObjectURL(blob);
-  try { return imgToCanvas(await loadImg(url), max); } finally { URL.revokeObjectURL(url); }
+  try {
+    const img = await loadImg(url);
+    const [w, h] = fitSize(img.naturalWidth, img.naturalHeight, maxSide, maxArea);
+    const c = mk(w, h), x = c.getContext('2d');
+    if (!x) throw new Error('Memoria grafica esaurita');
+    x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, w, h);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
 }
-function scaleCanvas(src, max) {
-  const s = Math.min(1, max / Math.max(src.width, src.height));
-  if (s === 1) return src;
-  const c = mk(Math.max(1, Math.round(src.width * s)), Math.max(1, Math.round(src.height * s)));
-  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+function scaleCanvas(src, maxSide, maxArea = Infinity) {
+  const [w, h] = fitSize(src.width, src.height, maxSide, maxArea);
+  if (w === src.width && h === src.height) return src;
+  const c = mk(w, h), x = c.getContext('2d');
+  if (!x) throw new Error('Memoria grafica esaurita');
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h);
   return c;
 }
-function toBlob(c, type = 'image/jpeg', q = .9) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Conversione fallita')), type, q)); }
+function toBlob(c, type = 'image/jpeg', q = .92) { return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('Conversione fallita')), type, q)); }
 function blobToDataURL(b) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); }); }
 function uid() { return (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)); }
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-function defaultName() {
-  const d = new Date(); const p = n => String(n).padStart(2, '0');
-  return `Scansione ${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
-}
-function fileBase() { return (docName || 'Scansione').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Scansione'; }
-
-const pxCache = new WeakMap();
-function pixels(c) {
-  let d = pxCache.get(c);
-  if (!d) { d = ctx2d(c).getImageData(0, 0, c.width, c.height).data; pxCache.set(c, d); }
-  return d;
-}
+const pad2 = n => String(n).padStart(2, '0');
+function todayStr() { const d = new Date(); return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`; }
+function defaultName() { return `Scansione ${todayStr()}`; }
+function fileBase(name) { return (name || 'Scansione').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Scansione'; }
 
 /* ---------------- prospettiva ---------------- */
 function solve(A, b) {
@@ -481,14 +486,13 @@ function homography(from, to) {
   }
   return solve(A, b);
 }
-function warp(src, q, maxSide) {
+// Raddrizza il quadrilatero q della sorgente (pixel sd di dimensioni sw×sh) in un ImageData
+function warpData(sd, sw, sh, q, maxSide, maxArea) {
   const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-  let W = Math.max(d(q[0], q[1]), d(q[3], q[2])), H = Math.max(d(q[0], q[3]), d(q[1], q[2]));
-  const s = Math.min(1, maxSide / Math.max(W, H, 1), Math.sqrt(MAX_AREA / Math.max(W * H, 1)));
-  W = Math.max(1, Math.round(W * s)); H = Math.max(1, Math.round(H * s));
+  let W = Math.max(d(q[0], q[1]), d(q[3], q[2]), 1), H = Math.max(d(q[0], q[3]), d(q[1], q[2]), 1);
+  [W, H] = fitSize(W, H, maxSide, maxArea);
   const h = homography([[0, 0], [W, 0], [W, H], [0, H]], q);
-  const sw = src.width, sh = src.height, sd = pixels(src);
-  const out = mk(W, H), oc = ctx2d(out), od = oc.createImageData(W, H), o = od.data;
+  const od = new ImageData(W, H), o = od.data;
   for (let y = 0; y < H; y++) {
     const py = y + .5;
     for (let x = 0; x < W; x++) {
@@ -510,14 +514,15 @@ function warp(src, q, maxSide) {
       o[oi + 3] = 255;
     }
   }
-  oc.putImageData(od, 0, 0);
-  return out;
+  return od;
 }
 function rotate(c, r) {
   r = ((r % 4) + 4) % 4; if (!r) return c;
   const o = r % 2 ? mk(c.height, c.width) : mk(c.width, c.height);
   const x = o.getContext('2d');
+  if (!x) throw new Error('Memoria grafica esaurita');
   x.translate(o.width / 2, o.height / 2); x.rotate(r * Math.PI / 2); x.drawImage(c, -c.width / 2, -c.height / 2);
+  free(c);
   return o;
 }
 
@@ -527,7 +532,7 @@ function detectCorners(src) {
   const S = 256, sc = Math.min(1, S / Math.max(src.width, src.height));
   const w = Math.max(2, Math.round(src.width * sc)), h = Math.max(2, Math.round(src.height * sc));
   const c = mk(w, h), x = ctx2d(c); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, w, h);
-  const d = x.getImageData(0, 0, w, h).data, N = w * h;
+  const d = x.getImageData(0, 0, w, h).data, N = w * h; free(c);
   const g = new Uint8Array(N), hist = new Array(256).fill(0);
   for (let i = 0; i < N; i++) { const v = (d[i * 4] * 77 + d[i * 4 + 1] * 150 + d[i * 4 + 2] * 29) >> 8; g[i] = v; hist[v]++; }
   let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
@@ -564,90 +569,211 @@ function detectCorners(src) {
   return polyArea(q) < 0.1 ? null : q;
 }
 
-/* ---------------- filtri ---------------- */
-function background(c) {
-  const W = c.width, H = c.height;
+/* ---------------- filtri (lavorano direttamente sui pixel, senza canvas extra) ---------------- */
+function bgGrid(d, W, H) {
   const k = Math.max(6, Math.round(Math.max(W, H) / 60));
-  const w = Math.max(1, Math.round(W / k)), h = Math.max(1, Math.round(H / k));
-  const s = mk(w, h), sx = ctx2d(s); sx.imageSmoothingQuality = 'high'; sx.drawImage(c, 0, 0, w, h);
-  let src = sx.getImageData(0, 0, w, h).data;
-  const pass = (fn) => {
-    const out = new Uint8ClampedArray(src.length);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const o = (y * w + x) * 4; fn(x, y, o, out); out[o + 3] = 255;
+  const w = Math.ceil(W / k), h = Math.ceil(H / k), n = w * h;
+  let g = new Float32Array(n * 3); const cnt = new Float32Array(n);
+  for (let y = 0; y < H; y++) {
+    const row = ((y / k) | 0) * w;
+    for (let x = 0; x < W; x++) {
+      const gi = row + ((x / k) | 0), i = (y * W + x) * 4, j = gi * 3;
+      g[j] += d[i]; g[j + 1] += d[i + 1]; g[j + 2] += d[i + 2]; cnt[gi]++;
     }
-    src = out;
-  };
-  const maxF = (x, y, o, out) => {
-    let r = 0, g = 0, b = 0;
-    for (let dy = -1; dy <= 1; dy++) { const yy = clamp(y + dy, 0, h - 1);
-      for (let dx = -1; dx <= 1; dx++) { const j = (yy * w + clamp(x + dx, 0, w - 1)) * 4;
-        if (src[j] > r) r = src[j]; if (src[j + 1] > g) g = src[j + 1]; if (src[j + 2] > b) b = src[j + 2]; } }
-    out[o] = r; out[o + 1] = g; out[o + 2] = b;
-  };
-  const boxF = (x, y, o, out) => {
-    let r = 0, g = 0, b = 0;
-    for (let dy = -1; dy <= 1; dy++) { const yy = clamp(y + dy, 0, h - 1);
-      for (let dx = -1; dx <= 1; dx++) { const j = (yy * w + clamp(x + dx, 0, w - 1)) * 4; r += src[j]; g += src[j + 1]; b += src[j + 2]; } }
-    out[o] = r / 9; out[o + 1] = g / 9; out[o + 2] = b / 9;
-  };
-  pass(maxF); pass(maxF); pass(maxF); pass(boxF);
-  sx.putImageData(new ImageData(src, w, h), 0, 0);
-  const big = mk(W, H), bx = ctx2d(big);
-  bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = 'high'; bx.drawImage(s, 0, 0, W, H);
-  return bx.getImageData(0, 0, W, H).data;
-}
-const curve = v => { v = (v - 38) * 1.18; return v < 0 ? 0 : v > 255 ? 255 : v; };
-function applyFilter(c, f) {
-  if (f === 'original') return c;
-  const x = ctx2d(c), W = c.width, H = c.height, img = x.getImageData(0, 0, W, H), d = img.data, N = W * H;
-  if (f === 'gray') {
-    for (let i = 0; i < d.length; i += 4) { const v = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8; d[i] = d[i + 1] = d[i + 2] = v; }
-  } else {
-    const bg = background(c);
-    if (f === 'magic') {
-      for (let i = 0; i < d.length; i += 4) {
-        const r = curve(d[i] * 255 / Math.max(bg[i], 1)), g = curve(d[i + 1] * 255 / Math.max(bg[i + 1], 1)), b = curve(d[i + 2] * 255 / Math.max(bg[i + 2], 1));
-        const l = (r * 77 + g * 150 + b * 29) / 256;
-        d[i] = l + (r - l) * 1.3; d[i + 1] = l + (g - l) * 1.3; d[i + 2] = l + (b - l) * 1.3;
-      }
-    } else {
-      const gray = new Uint8ClampedArray(N);
-      for (let p = 0, i = 0; p < N; p++, i += 4) {
-        const v = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) / 256, bv = (bg[i] * 77 + bg[i + 1] * 150 + bg[i + 2] * 29) / 256;
-        gray[p] = curve(v * 255 / Math.max(bv, 1));
-      }
-      if (f === 'enhance') {
-        for (let p = 0, i = 0; p < N; p++, i += 4) d[i] = d[i + 1] = d[i + 2] = gray[p];
-      } else { // bw: soglia adattiva (Bradley)
-        const W1 = W + 1, I = new Uint32Array(W1 * (H + 1));
-        for (let y = 1; y <= H; y++) { let row = 0;
-          for (let xx = 1; xx <= W; xx++) { row += gray[(y - 1) * W + xx - 1]; I[y * W1 + xx] = I[(y - 1) * W1 + xx] + row; } }
-        const half = Math.max(4, Math.round(Math.max(W, H) / 32)), t = 0.13;
-        for (let y = 0; y < H; y++) {
-          const y1 = Math.max(0, y - half), y2 = Math.min(H - 1, y + half);
-          for (let xx = 0; xx < W; xx++) {
-            const x1 = Math.max(0, xx - half), x2 = Math.min(W - 1, xx + half);
-            const cnt = (x2 - x1 + 1) * (y2 - y1 + 1);
-            const sm = I[(y2 + 1) * W1 + x2 + 1] - I[y1 * W1 + x2 + 1] - I[(y2 + 1) * W1 + x1] + I[y1 * W1 + x1];
-            const p = y * W + xx, v = gray[p];
-            const out = (v > 215 || v * cnt > sm * (1 - t)) ? 255 : 0;
-            const i = p * 4; d[i] = d[i + 1] = d[i + 2] = out;
+  }
+  for (let i = 0; i < n; i++) { const c = cnt[i] || 1; g[i * 3] /= c; g[i * 3 + 1] /= c; g[i * 3 + 2] /= c; }
+  const pass = (isMax) => {
+    const o = new Float32Array(g.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      for (let ch = 0; ch < 3; ch++) {
+        let acc = isMax ? 0 : 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = clamp(y + dy, 0, h - 1);
+          for (let dx = -1; dx <= 1; dx++) {
+            const v = g[(yy * w + clamp(x + dx, 0, w - 1)) * 3 + ch];
+            if (isMax) { if (v > acc) acc = v; } else acc += v;
           }
         }
+        o[(y * w + x) * 3 + ch] = isMax ? acc : acc / 9;
+      }
+    }
+    g = o;
+  };
+  pass(true); pass(true); pass(true); pass(false); // toglie il testo e lascia il colore della carta
+  return { g, w, h, k };
+}
+const curve = v => { v = (v - 38) * 1.18; return v < 0 ? 0 : v > 255 ? 255 : v; };
+function applyFilterData(img, f) {
+  if (f === 'original') return;
+  const d = img.data, W = img.width, H = img.height, N = W * H;
+  if (f === 'gray') {
+    for (let i = 0; i < d.length; i += 4) { const v = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) >> 8; d[i] = d[i + 1] = d[i + 2] = v; }
+    return;
+  }
+  const B = bgGrid(d, W, H), g = B.g, gw = B.w;
+  const cx0 = new Int32Array(W), cx1 = new Int32Array(W), cfx = new Float32Array(W);
+  for (let x = 0; x < W; x++) { const gx = clamp((x + .5) / B.k - .5, 0, B.w - 1); const x0 = gx | 0; cx0[x] = x0; cx1[x] = Math.min(x0 + 1, B.w - 1); cfx[x] = gx - x0; }
+  const gray = f === 'magic' ? null : new Uint8ClampedArray(N);
+  for (let y = 0; y < H; y++) {
+    const gy = clamp((y + .5) / B.k - .5, 0, B.h - 1), y0 = gy | 0, y1 = Math.min(y0 + 1, B.h - 1), fy = gy - y0;
+    const r0 = y0 * gw, r1 = y1 * gw;
+    for (let x = 0; x < W; x++) {
+      const a = (r0 + cx0[x]) * 3, b = (r0 + cx1[x]) * 3, c = (r1 + cx0[x]) * 3, e = (r1 + cx1[x]) * 3, fx = cfx[x];
+      const bg = ch => { const t = g[a + ch] + (g[b + ch] - g[a + ch]) * fx, u = g[c + ch] + (g[e + ch] - g[c + ch]) * fx; return t + (u - t) * fy; };
+      const br = bg(0), bgc = bg(1), bb = bg(2);
+      const i = (y * W + x) * 4;
+      if (f === 'magic') {
+        const r = curve(d[i] * 255 / (br > 1 ? br : 1)), gg = curve(d[i + 1] * 255 / (bgc > 1 ? bgc : 1)), bl = curve(d[i + 2] * 255 / (bb > 1 ? bb : 1));
+        const l = (r * 77 + gg * 150 + bl * 29) / 256;
+        d[i] = l + (r - l) * 1.3; d[i + 1] = l + (gg - l) * 1.3; d[i + 2] = l + (bl - l) * 1.3;
+      } else {
+        const v = (d[i] * 77 + d[i + 1] * 150 + d[i + 2] * 29) / 256, bv = (br * 77 + bgc * 150 + bb * 29) / 256;
+        gray[y * W + x] = curve(v * 255 / (bv > 1 ? bv : 1));
       }
     }
   }
-  x.putImageData(img, 0, 0);
-  return c;
+  if (f === 'enhance') {
+    for (let p = 0, i = 0; p < N; p++, i += 4) d[i] = d[i + 1] = d[i + 2] = gray[p];
+  } else if (f === 'bw') { // soglia adattiva (Bradley)
+    const W1 = W + 1, I = new Uint32Array(W1 * (H + 1));
+    for (let y = 1; y <= H; y++) { let row = 0;
+      for (let xx = 1; xx <= W; xx++) { row += gray[(y - 1) * W + xx - 1]; I[y * W1 + xx] = I[(y - 1) * W1 + xx] + row; } }
+    const half = Math.max(4, Math.round(Math.max(W, H) / 32)), t = 0.13;
+    for (let y = 0; y < H; y++) {
+      const y1 = Math.max(0, y - half), y2 = Math.min(H - 1, y + half);
+      for (let xx = 0; xx < W; xx++) {
+        const x1 = Math.max(0, xx - half), x2 = Math.min(W - 1, xx + half);
+        const cnt = (x2 - x1 + 1) * (y2 - y1 + 1);
+        const sm = I[(y2 + 1) * W1 + x2 + 1] - I[y1 * W1 + x2 + 1] - I[(y2 + 1) * W1 + x1] + I[y1 * W1 + x1];
+        const p = y * W + xx, v = gray[p];
+        const out = (v > 215 || v * cnt > sm * (1 - t)) ? 255 : 0;
+        const i = p * 4; d[i] = d[i + 1] = d[i + 2] = out;
+      }
+    }
+  }
 }
-function renderFrom(src, corners, rot, filter, max) {
-  let c = warp(src, corners.map(([x, y]) => [x * src.width, y * src.height]), max);
-  c = rotate(c, rot);
-  return applyFilter(c, filter);
+// sd: pixel della sorgente se già letti (anteprime), altrimenti vengono letti e poi rilasciati
+function renderFrom(src, sd, corners, rot, filter, maxSide, maxArea) {
+  const px = sd || ctx2d(src).getImageData(0, 0, src.width, src.height).data;
+  const img = warpData(px, src.width, src.height, corners.map(([x, y]) => [x * src.width, y * src.height]), maxSide, maxArea);
+  applyFilterData(img, filter);
+  const c = mk(img.width, img.height); ctx2d(c).putImageData(img, 0, 0);
+  return rotate(c, rot);
+}
+// Elaborazione finale a piena qualità, con ripiego automatico se manca memoria
+async function processPage(src, corners, rot, filter) {
+  let lastErr;
+  for (const area of AREAS) {
+    let s = src, out = null, th = null;
+    try {
+      if (src.width * src.height > area * 1.02) s = scaleCanvas(src, 99999, area);
+      out = renderFrom(s, null, corners, rot, filter, 6000, area);
+      const processed = await toBlob(out, 'image/jpeg', .95);
+      th = scaleCanvas(out, 420);
+      const thumb = th.toDataURL('image/jpeg', .78);
+      return { processed, thumb, w: out.width, h: out.height };
+    } catch (e) { lastErr = e; console.warn('Ripiego a risoluzione inferiore', area, e); }
+    finally { if (th && th !== out) free(th); free(out); if (s !== src) free(s); }
+  }
+  throw lastErr || new Error('Elaborazione non riuscita');
 }
 
-/* ---------------- UI helpers ---------------- */
+/* ---------------- nome automatico (lettura del testo in locale) ---------------- */
+const TESS_SRC = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let ocrWorker = null, ocrLoading = null;
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Script non caricato')); document.head.appendChild(s); });
+}
+function getOCR() {
+  if (ocrWorker) return Promise.resolve(ocrWorker);
+  if (!ocrLoading) ocrLoading = (async () => {
+    if (!window.Tesseract) await loadScript(TESS_SRC);
+    ocrWorker = await Tesseract.createWorker('ita');
+    return ocrWorker;
+  })().catch(e => { ocrLoading = null; throw e; });
+  return ocrLoading;
+}
+async function ocrText(blob) {
+  const c = await blobToCanvas(blob, 3e6, 1800);
+  try { const { data } = await (await getOCR()).recognize(c); return data.text || ''; }
+  finally { free(c); }
+}
+const DOC_TYPES = [
+  ["Carta d'identità", false, [/CARTA D.?IDENTITA/, /IDENTITY CARD/, /CARTE D.?IDENTITE/], [/REPUBBLICA ITALIANA/, /COMUNE DI/, /LUOGO E DATA DI NASCITA|LUOGO DI NASCITA/, /STATURA/, /CITTADINANZA/, /SCADENZA/]],
+  ['Patente', false, [/PATENTE DI GUIDA/, /DRIVING LICEN/], [/MINISTERO DELLE INFRASTRUTTURE|MIT.?UCO/, /\b4[ABC]\b/, /\bCATEGORI/]],
+  ['Passaporto', false, [/PASSAPORTO/, /PASSPORT/], [/P<ITA/, /AUTORITA/]],
+  ['Tessera sanitaria', false, [/TESSERA SANITARIA/, /TESSERA EUROPEA/, /HEALTH INSURANCE CARD/], [/CODICE FISCALE/, /SERVIZIO SANITARIO/]],
+  ['Permesso di soggiorno', false, [/PERMESSO DI SOGGIORNO/, /RESIDENCE PERMIT/], []],
+  ['Ricetta', true, [/RICETTA ELETTRONICA/, /PROMEMORIA PER L.?ASSISTITO/, /RICETTA MEDICA/], [/PRESCRIZIONE/, /ESENZIONE/, /\bNRE\b/, /SERVIZIO SANITARIO NAZIONALE/]],
+  ['Certificato medico', true, [/CERTIFICATO MEDICO/, /CERTIFICATO DI MALATTIA/, /CERTIFICATO DI IDONEITA/], [/PROGNOSI/, /DIAGNOSI/]],
+  ['Referto', true, [/REFERTO/], [/ESAME|ESAMI/, /LABORATORIO/, /EMOCROMO/, /ECOGRAFI/, /RADIOLOG/, /DIAGNOSI/, /VALORI DI RIFERIMENTO/]],
+  ['Busta paga', true, [/CEDOLINO/, /BUSTA PAGA/, /NETTO IN BUSTA/], [/RETRIBUZIONE/, /COMPETENZE/, /TRATTENUTE/, /INPS/]],
+  ['Bolletta', true, [/BOLLETTA/], [/\bKWH\b/, /\bSMC\b/, /CONSUMI/, /FORNITURA/, /POD\b|PDR\b/, /ENEL|A2A|HERA|EDISON|PLENITUDE|IREN|SORGENIA|ACEA|FASTWEB|\bTIM\b|VODAFONE|WINDTRE|ILIAD/]],
+  ['Multa', true, [/VERBALE DI ACCERTAMENTO/, /VERBALE DI CONTESTAZIONE/], [/CODICE DELLA STRADA/, /VIOLAZIONE/, /POLIZIA/]],
+  ['Fattura', true, [/FATTURA/], [/IMPONIBILE/, /PARTITA IVA|P\.? ?IVA/, /ALIQUOTA/]],
+  ['Ricevuta POS', true, [/TRANSAZIONE APPROVATA/, /\bACQUISTO\b.*\n?.*(MASTERCARD|VISA|MAESTRO|BANCOMAT|PAGOBANCOMAT)/], [/MASTERCARD|VISA|MAESTRO|PAGOBANCOMAT/, /IMPORTO EUR/, /\bA\.?I\.?I\.?C\b|\bSTAN\b|\bPAN\b/, /AUT\.?/]],
+  ['Scontrino', true, [/DOCUMENTO COMMERCIALE/, /SCONTRINO/], [/TOTALE COMPLESSIVO/, /CONTANTI/, /\bRESTO\b/, /PAGAMENTO ELETTRONICO/]],
+  ['Ricevuta', true, [/RICEVUTA/], [/PAGAMENTO/, /IMPORTO/]],
+  ['Contratto', true, [/CONTRATTO/], [/TRA LE PARTI/, /SI CONVIENE/, /SOTTOSCRITT/, /CLAUSOL/]],
+  ['Certificato', true, [/CERTIFICATO/, /ATTESTATO/], [/SI CERTIFICA|SI ATTESTA/]],
+  ['Diploma', false, [/DIPLOMA DI/, /DIPLOMA$/m], [/CONFERISCE|CONSEGUITO/]],
+  ['Lettera', true, [], [/GENTILE|EGREGI/, /CORDIALI SALUTI|DISTINTI SALUTI/, /OGGETTO:/]]
+];
+const PROVIDERS = ['Enel', 'A2A', 'Hera', 'Edison', 'Plenitude', 'Iren', 'Sorgenia', 'Acea', 'Fastweb', 'TIM', 'Vodafone', 'WindTre', 'Iliad'];
+function normText(t) { return t.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’‘`´]/g, "'").toUpperCase().replace(/[ \t]+/g, ' '); }
+function nameFromText(raw) {
+  const T = normText(raw);
+  let best = null, bestScore = 0;
+  for (const [name, withDate, strong, weak] of DOC_TYPES) {
+    let s = 0;
+    strong.forEach(r => { if (r.test(T)) s += 3; });
+    weak.forEach(r => { if (r.test(T)) s += 1; });
+    if (s > bestScore) { bestScore = s; best = [name, withDate]; }
+  }
+  if (best && bestScore >= 3) {
+    let [name, withDate] = best;
+    if (name === 'Bolletta') { const pv = PROVIDERS.find(p => new RegExp('\\b' + p.toUpperCase() + '\\b').test(T)); if (pv) name += ' ' + pv; }
+    return withDate ? `${name} ${todayStr()}` : name;
+  }
+  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean).slice(0, 10);
+  for (const l of lines) {
+    const letters = (l.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+    const words = l.split(/\s+/).filter(w => /[A-Za-zÀ-ÿ]{3,}/.test(w)).length;
+    if (l.length >= 8 && l.length <= 42 && letters / l.length > 0.8 && words >= 2) {
+      const t = l.toLowerCase().replace(/\s+/g, ' ').replace(/[^\p{L}\p{N} '’.-]/gu, '').trim();
+      if (t.length >= 8) return t.charAt(0).toUpperCase() + t.slice(1);
+    }
+  }
+  return null;
+}
+async function autoNameMaybe(doc, force = false) {
+  if (!doc) return;
+  if (force) { doc.autoName = true; doc.autoFrom = null; }
+  if (!doc.autoName) return;
+  const first = docPages(doc.id)[0];
+  if (!first || first.id === doc.autoFrom) return;
+  if (naming.has(doc.id)) return;
+  naming.add(doc.id); renderAll();
+  try {
+    const name = nameFromText(await ocrText(first.processed));
+    if (doc.autoName) {
+      doc.autoFrom = first.id;
+      if (name) { doc.name = name; toast('Riconosciuto: ' + name); }
+      else if (force) toast('Tipo di documento non riconosciuto');
+      await safe(store.put('docs', doc));
+    }
+  } catch (e) {
+    console.warn(e);
+    if (force) toast('Riconoscimento non disponibile: serve internet la prima volta');
+  } finally {
+    naming.delete(doc.id); renderAll();
+    // riprova solo se nel frattempo è cambiata la prima pagina (non dopo un errore di rete)
+    const f2 = docPages(doc.id)[0];
+    if (doc.autoName && f2 && f2.id !== first.id && f2.id !== doc.autoFrom) autoNameMaybe(doc);
+  }
+}
+
+/* ---------------- avvisi ---------------- */
 function busy(text) {
   const b = $('#busy');
   if (text === false) { b.classList.add('hidden'); return; }
@@ -656,7 +782,7 @@ function busy(text) {
 let toastT;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400);
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
 }
 function ask(msg, ok = 'Elimina') {
   return new Promise(res => {
@@ -668,121 +794,289 @@ function ask(msg, ok = 'Elimina') {
   });
 }
 
-/* ---------------- home ---------------- */
-function sorted() { return pages.sort((a, b) => a.order - b.order); }
-function renderGrid() {
-  const g = $('#grid'); g.innerHTML = '';
-  g.classList.toggle('editing', editMode);
-  sorted().forEach((p, i) => {
+/* ---------------- dati ---------------- */
+const getDoc = id => docs.find(d => d.id === id);
+const docPages = id => pages.filter(p => p.docId === id).sort((a, b) => a.order - b.order);
+async function newDoc() {
+  const d = { id: uid(), name: defaultName(), autoName: true, autoFrom: null, createdAt: Date.now(), updatedAt: Date.now() };
+  docs.push(d); await safe(store.put('docs', d)); return d;
+}
+async function resolveTarget(t) {
+  if (t && getDoc(t)) return getDoc(t);
+  let d = currentId && getDoc(currentId);
+  if (!d) { d = await newDoc(); currentId = d.id; safe(store.set('current', currentId)); }
+  return d;
+}
+async function savePage(src, corners, rot, filter, existing, docId) {
+  const r = await processPage(src, corners, rot, filter);
+  let p = existing;
+  if (!p) {
+    const doc = await resolveTarget(docId);
+    const original = await toBlob(src, 'image/jpeg', .95);
+    p = { id: uid(), docId: doc.id, order: docPages(doc.id).reduce((m, x) => Math.max(m, x.order), 0) + 1, original };
+    pages.push(p);
+  }
+  Object.assign(p, { corners: corners.map(c => c.slice()), rot, filter, processed: r.processed, thumb: r.thumb, w: r.w, h: r.h });
+  await safe(store.put('pages', p));
+  const doc = getDoc(p.docId);
+  if (doc) { doc.updatedAt = Date.now(); await safe(store.put('docs', doc)); }
+  return p;
+}
+async function deletePage(p) {
+  pages = pages.filter(x => x !== p); await safe(store.del('pages', p.id));
+  const doc = getDoc(p.docId);
+  if (doc && !docPages(doc.id).length) await deleteDoc(doc, true);
+  else if (doc) { doc.updatedAt = Date.now(); safe(store.put('docs', doc)); autoNameMaybe(doc); }
+}
+async function deleteDoc(doc, silent) {
+  for (const p of docPages(doc.id)) { await safe(store.del('pages', p.id)); }
+  pages = pages.filter(p => p.docId !== doc.id);
+  docs = docs.filter(d => d !== doc); await safe(store.del('docs', doc.id));
+  if (currentId === doc.id) { currentId = null; safe(store.set('current', null)); }
+  if (!silent) toast('Documento eliminato');
+}
+
+/* ---------------- navigazione ---------------- */
+const SCREENS = ['archive', 'docview', 'viewer', 'editor'];
+function show(id, on) { $('#' + id).classList.toggle('hidden', !on); }
+function renderAll() { renderHome(); if (!$('#archive').classList.contains('hidden')) renderArchive(); if (!$('#docview').classList.contains('hidden')) renderDoc(); }
+
+function renderHome() {
+  const live = docs.filter(d => docPages(d.id).length);
+  const b = $('#archBadge'); b.textContent = live.length; b.classList.toggle('hidden', !live.length);
+  const d = currentId && getDoc(currentId), ps = d ? docPages(d.id) : [];
+  const has = !!(d && ps.length);
+  $('#session').classList.toggle('hidden', !has);
+  $('#heroTitle').textContent = has ? 'Scansione in corso' : 'Pronto a scansionare';
+  $('#heroText').textContent = has ? 'Scatta la prossima pagina, oppure tocca Fine per salvarla in Archivio.' : 'Inquadra il documento e scatta. Bordi, prospettiva e nome li sistemo io.';
+  if (has) {
+    $('#sessName').textContent = d.name;
+    $('#sessCount').textContent = (ps.length === 1 ? '1 pagina' : ps.length + ' pagine') + (naming.has(d.id) ? ' · riconosco…' : '');
+    $('#sessThumbs').innerHTML = ps.slice(-3).map((p, i, a) => `<img src="${p.thumb}" alt="" style="left:${(a.length - 1 - i) * -3 + 4}px;top:${(a.length - 1 - i) * -3 + 4}px">`).join('');
+  }
+}
+function groupLabel(ts) {
+  const now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (ts >= start) return 'Oggi';
+  if (ts >= start - 864e5) return 'Ieri';
+  if (ts >= start - 6 * 864e5) return 'Ultimi 7 giorni';
+  const s = new Date(ts).toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function whenLabel(ts) {
+  const d = new Date(ts), now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const time = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  if (ts >= start - 864e5) return time;
+  return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) + ', ' + time;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function renderArchive() {
+  const q = $('#archSearch').value.trim().toLowerCase();
+  const all = docs.filter(d => docPages(d.id).length).sort((a, b) => b.createdAt - a.createdAt);
+  const list = all.filter(d => !q || d.name.toLowerCase().includes(q));
+  $('#archTotal').textContent = all.length ? (all.length === 1 ? '1 documento' : all.length + ' documenti') : '';
+  const el = $('#archList'); el.innerHTML = '';
+  $('#archEmpty').classList.toggle('hidden', all.length > 0);
+  el.classList.toggle('hidden', !all.length);
+  let last = null;
+  if (all.length && !list.length) el.innerHTML = '<p class="muted" style="text-align:center;margin-top:30px">Nessun documento con questo nome</p>';
+  for (const d of list) {
+    const g = groupLabel(d.createdAt);
+    if (g !== last) { const h = document.createElement('div'); h.className = 'group'; h.textContent = g; el.appendChild(h); last = g; }
+    const ps = docPages(d.id);
+    const r = document.createElement('button');
+    r.className = 'row glass';
+    r.innerHTML = `<div class="row-th"><img src="${ps[0].thumb}" alt=""></div><div class="row-info"><strong>${esc(d.name)}</strong><span class="muted">${ps.length === 1 ? '1 pagina' : ps.length + ' pagine'} · ${whenLabel(d.createdAt)}${d.id === currentId ? ' · in corso' : ''}</span></div>${ICON.chev}`;
+    r.onclick = () => openDoc(d.id, 'archive');
+    el.appendChild(r);
+  }
+}
+function openArchive() { show('archive', true); renderArchive(); }
+function openDoc(id, from) {
+  openId = id; docFrom = from; editMode = false;
+  show('docview', true); renderDoc();
+}
+function closeDoc() {
+  show('docview', false); openId = null; editMode = false;
+  if (docFrom === 'archive') { show('archive', true); renderArchive(); }
+  renderHome();
+}
+function renderDoc() {
+  const d = getDoc(openId);
+  if (!d) { closeDoc(); return; }
+  const ps = docPages(d.id);
+  if (document.activeElement !== $('#docName')) $('#docName').value = d.name;
+  $('#docMeta').textContent = (ps.length === 1 ? '1 pagina' : ps.length + ' pagine') + ' · ' + whenLabel(d.createdAt) + (naming.has(d.id) ? ' · riconosco…' : '');
+  const ab = $('#autoNameBtn'); ab.classList.toggle('auto', !!d.autoName); ab.classList.toggle('working', naming.has(d.id));
+  $('#editBtn').classList.toggle('on', editMode); $('#editBtn').innerHTML = editMode ? ICON.check : ICON.pen;
+  const g = $('#grid'); g.innerHTML = ''; g.classList.toggle('editing', editMode);
+  ps.forEach((p, i) => {
     const el = document.createElement('div');
     el.className = 'card glass';
-    el.style.animationDelay = editMode ? '' : (i * 0.03) + 's';
     el.innerHTML = `<img src="${p.thumb}" alt="Pagina ${i + 1}"><span class="num">${i + 1}</span>` +
-      (editMode ? `<div class="card-actions"><button data-a="left" ${i === 0 ? 'disabled' : ''}>${ICON.left}</button><button data-a="del" class="del">${ICON.del}</button><button data-a="right" ${i === pages.length - 1 ? 'disabled' : ''}>${ICON.right}</button></div>` : '');
+      (editMode ? `<div class="card-actions"><button data-a="left" ${i === 0 ? 'disabled' : ''}>${ICON.left}</button><button data-a="del" class="del">${ICON.del}</button><button data-a="right" ${i === ps.length - 1 ? 'disabled' : ''}>${ICON.right}</button></div>` : '');
     el.onclick = ev => {
       const btn = ev.target.closest('button');
       if (btn) { ev.stopPropagation(); cardAction(p, btn.dataset.a); return; }
-      if (!editMode) editPage(p);
+      if (!editMode) openViewer(i);
     };
     g.appendChild(el);
   });
-  const n = pages.length;
-  $('#empty').classList.toggle('hidden', n > 0);
-  updateHeader();
-  if (!n && editMode) { editMode = false; }
-  $('#editBtn').classList.toggle('on', editMode);
-  $('#editBtn').innerHTML = editMode ? ICON.check : ICON.pen;
 }
 async function cardAction(p, a) {
-  const list = sorted(), i = list.indexOf(p);
+  const list = docPages(p.docId), i = list.indexOf(p);
   if (a === 'del') {
     if (!(await ask('Eliminare questa pagina?'))) return;
-    pages = pages.filter(x => x !== p); await safe(store.del(p.id)); renderGrid(); autoNameMaybe(); return;
+    await deletePage(p); renderAll(); return;
   }
   const j = a === 'left' ? i - 1 : i + 1;
   if (j < 0 || j >= list.length) return;
   const q = list[j]; [p.order, q.order] = [q.order, p.order];
-  await safe(store.put(p)); await safe(store.put(q)); renderGrid(); autoNameMaybe();
-}
-async function editPage(p) {
-  busy('Apertura…');
-  try { const c = await blobToCanvas(p.original); busy(false); openEditor(c, p); }
-  catch (e) { busy(false); toast(e.message); }
-}
-function nextOrder() { return pages.reduce((m, p) => Math.max(m, p.order), 0) + 1; }
-async function savePage(src, corners, rot, filter, existing) {
-  const out = renderFrom(src, corners, rot, filter, 6000);
-  const processed = await toBlob(out, 'image/jpeg', .95);
-  const thumb = scaleCanvas(out, 420).toDataURL('image/jpeg', .75);
-  let p = existing;
-  if (!p) { p = { id: uid(), order: nextOrder(), original: await toBlob(src, 'image/jpeg', .96) }; pages.push(p); }
-  Object.assign(p, { corners: corners.map(c => c.slice()), rot, filter, processed, thumb, w: out.width, h: out.height });
-  await safe(store.put(p));
-  return p;
+  await safe(store.put('pages', p)); await safe(store.put('pages', q)); renderDoc();
+  autoNameMaybe(getDoc(p.docId));
 }
 
-$('#shootBtn').onclick = () => $('#camInput').click();
-$('#importBtn').onclick = () => $('#fileInput').click();
-$('#camInput').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  busy('Apertura…');
-  try { const c = await blobToCanvas(f); busy(false); openEditor(c); }
-  catch (err) { busy(false); toast(err.message); }
+/* ---------------- visualizzatore a schermo intero ---------------- */
+let vIndex = 0, vUrls = [];
+function openViewer(i) {
+  vIndex = i; show('viewer', true); renderViewer(true);
+}
+function renderViewer(jump) {
+  const d = getDoc(openId); if (!d) { closeViewer(); return; }
+  const ps = docPages(d.id); if (!ps.length) { closeViewer(); return; }
+  vIndex = clamp(vIndex, 0, ps.length - 1);
+  vUrls.forEach(u => URL.revokeObjectURL(u)); vUrls = [];
+  const tr = $('#vTrack'); tr.innerHTML = '';
+  ps.forEach(p => {
+    const u = URL.createObjectURL(p.processed); vUrls.push(u);
+    const s = document.createElement('div'); s.className = 'v-slide';
+    s.innerHTML = `<img src="${u}" alt="">`; tr.appendChild(s);
+  });
+  $('#vName').textContent = d.name;
+  updateViewerCount();
+  if (jump) requestAnimationFrame(() => { tr.scrollLeft = vIndex * tr.clientWidth; });
+}
+function updateViewerCount() {
+  const n = docPages(openId).length;
+  $('#vCount').textContent = `Pagina ${vIndex + 1} di ${n}`;
+}
+$('#vTrack').addEventListener('scroll', () => {
+  const tr = $('#vTrack'); const i = Math.round(tr.scrollLeft / Math.max(tr.clientWidth, 1));
+  if (i !== vIndex) { vIndex = i; updateViewerCount(); }
+}, { passive: true });
+function closeViewer() { show('viewer', false); vUrls.forEach(u => URL.revokeObjectURL(u)); vUrls = []; $('#vTrack').innerHTML = ''; renderDoc(); }
+const vPage = () => docPages(openId)[vIndex];
+$('#vBack').onclick = closeViewer;
+$('#vCrop').onclick = () => { const p = vPage(); if (p) editPage(p, 'crop', 'viewer'); };
+$('#vFilter').onclick = () => { const p = vPage(); if (p) editPage(p, 'filter', 'viewer'); };
+$('#vRotate').onclick = async () => {
+  const p = vPage(); if (!p) return;
+  busy('Ruoto…'); await raf();
+  let src = null;
+  try { src = await blobToCanvas(p.original); await savePage(src, p.corners, (p.rot + 1) % 4, p.filter, p); renderViewer(true); }
+  catch (e) { toast('Errore: ' + e.message); }
+  finally { free(src); busy(false); }
 };
-$('#fileInput').onchange = async e => {
-  const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+$('#vShare').onclick = async () => {
+  const p = vPage(), d = getDoc(openId); if (!p || !d) return;
+  const n = docPages(d.id).length;
+  const f = new File([p.processed], `${fileBase(d.name)}${n > 1 ? ' ' + (vIndex + 1) : ''}.jpg`, { type: 'image/jpeg' });
+  if (!(await shareFiles([f]))) { download(f, f.name); toast('Immagine scaricata'); }
+};
+$('#vDelete').onclick = async () => {
+  const p = vPage(); if (!p) return;
+  if (!(await ask('Eliminare questa pagina?'))) return;
+  const docId = p.docId; await deletePage(p);
+  if (!getDoc(docId)) { show('viewer', false); closeDoc(); renderAll(); return; }
+  renderViewer(true); renderAll();
+};
+
+/* ---------------- acquisizione ---------------- */
+function pick(input, docId, from) { target = docId; returnTo = from; input.click(); }
+$('#shootBtn').onclick = () => pick($('#camInput'), null, 'home');
+$('#importBtn').onclick = () => pick($('#fileInput'), null, 'home');
+$('#docShoot').onclick = () => pick($('#camInput'), openId, 'doc');
+$('#docImport').onclick = () => pick($('#fileInput'), openId, 'doc');
+$('#archBtn').onclick = openArchive;
+$('#archBack').onclick = () => { show('archive', false); renderHome(); };
+$('#archSearch').addEventListener('input', renderArchive);
+$('#sessOpen').onclick = () => currentId && openDoc(currentId, 'home');
+$('#sessDone').onclick = () => { currentId = null; safe(store.set('current', null)); renderHome(); toast('Salvato in Archivio'); };
+
+async function openFiles(files) {
+  if (!files.length) return;
+  const docId = target, from = returnTo;
   if (files.length === 1) {
     busy('Apertura…');
-    try { const c = await blobToCanvas(files[0]); busy(false); openEditor(c); }
+    try { const c = await blobToCanvas(files[0]); busy(false); openEditor(c, null, docId, from); }
     catch (err) { busy(false); toast(err.message); }
     return;
   }
-  let ok = 0;
+  let ok = 0, doc = null;
   for (let i = 0; i < files.length; i++) {
     busy(`Elaborazione ${i + 1} di ${files.length}…`); await raf();
+    let src = null, prev = null;
     try {
-      const src = await blobToCanvas(files[i]);
-      const corners = detectCorners(scaleCanvas(src, 1400)) || FULL;
-      await savePage(src, corners, 0, lastFilter); ok++;
+      src = await blobToCanvas(files[i]);
+      prev = scaleCanvas(src, 1400);
+      const corners = detectCorners(prev) || FULL;
+      const p = await savePage(src, corners, 0, lastFilter, null, docId);
+      doc = getDoc(p.docId); ok++;
     } catch (err) { console.warn(err); }
+    finally { if (prev !== src) free(prev); free(src); }
   }
-  busy(false); renderGrid(); toast(`${ok} pagine aggiunte · tocca una pagina per ritoccarla`);
-  autoNameMaybe();
-};
-$('#autoNameBtn').onclick = () => {
-  if (!pages.length) { toast('Aggiungi prima una pagina'); return; }
-  if (naming) return;
-  autoNameMaybe(true);
-};
-$('#editBtn').onclick = () => { if (!pages.length) return; editMode = !editMode; renderGrid(); };
-$('#clearBtn').onclick = async () => {
-  if (!pages.length) { toast('Il documento è già vuoto'); return; }
-  if (!(await ask('Eliminare tutte le pagine del documento?', 'Elimina tutto'))) return;
-  pages = []; await safe(store.clear());
-  docName = defaultName(); $('#docName').value = docName;
-  autoName = true; autoFrom = null; saveNameMeta();
-  renderGrid(); toast('Documento svuotato');
-};
+  busy(false); renderAll();
+  toast(`${ok} pagine aggiunte`);
+  if (doc) autoNameMaybe(doc);
+}
+$('#camInput').onchange = e => { const f = [...e.target.files]; e.target.value = ''; openFiles(f); };
+$('#fileInput').onchange = e => { const f = [...e.target.files]; e.target.value = ''; openFiles(f); };
+
+/* ---------------- schermata documento ---------------- */
+$('#docBack').onclick = closeDoc;
+$('#editBtn').onclick = () => { editMode = !editMode; renderDoc(); };
+$('#autoNameBtn').onclick = () => { const d = getDoc(openId); if (d && !naming.has(d.id)) autoNameMaybe(d, true); };
 $('#docName').addEventListener('change', e => {
+  const d = getDoc(openId); if (!d) return;
   const v = e.target.value.trim();
-  if (v) { docName = v; autoName = false; }          // nome scelto a mano: non lo tocco più
-  else { docName = defaultName(); autoName = true; autoFrom = null; }  // campo svuotato: torna automatico
-  e.target.value = docName; saveNameMeta(); updateHeader();
-  if (autoName) autoNameMaybe();
+  if (v) { d.name = v; d.autoName = false; }
+  else { d.name = defaultName(); d.autoName = true; d.autoFrom = null; }
+  e.target.value = d.name; safe(store.put('docs', d)); renderAll();
+  if (d.autoName) autoNameMaybe(d);
 });
 $('#docName').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+$('#docDelete').onclick = async () => {
+  const d = getDoc(openId); if (!d) return;
+  if (!(await ask(`Eliminare “${d.name}” e tutte le sue pagine?`))) return;
+  await deleteDoc(d); closeDoc();
+};
+$('#docExport').onclick = () => { if (docPages(openId).length) $('#sheet').classList.remove('hidden'); };
 
 /* ---------------- editor ---------------- */
-const ED = { src: null, prev: null, corners: null, rot: 0, filter: 'magic', tab: 'crop', page: null, disp: { w: 0, h: 0, s: 1 } };
-async function openEditor(src, page) {
-  ED.src = src; ED.prev = scaleCanvas(src, 1400); ED.page = page || null;
-  ED.corners = page ? page.corners.map(c => c.slice()) : (detectCorners(ED.prev) || FULL.map(c => c.slice()));
-  ED.rot = page ? page.rot : 0;
-  ED.filter = page ? page.filter : lastFilter;
-  $('#editor').classList.remove('hidden');
-  await setTab('crop');
+const ED = { src: null, prev: null, prevPx: null, corners: null, rot: 0, filter: 'magic', tab: 'crop', page: null, docId: null, from: 'home', disp: { w: 0, h: 0, s: 1 } };
+async function editPage(p, tab, from) {
+  busy('Apertura…');
+  try { const c = await blobToCanvas(p.original); busy(false); openEditor(c, p, p.docId, from, tab); }
+  catch (e) { busy(false); toast(e.message); }
 }
-function closeEditor() { $('#editor').classList.add('hidden'); ED.src = ED.prev = ED.page = null; }
+async function openEditor(src, page, docId, from, tab = 'crop') {
+  try {
+    ED.src = src; ED.prev = scaleCanvas(src, 1400); ED.prevPx = ctx2d(ED.prev).getImageData(0, 0, ED.prev.width, ED.prev.height).data;
+    ED.page = page || null; ED.docId = docId; ED.from = from;
+    ED.corners = page ? page.corners.map(c => c.slice()) : (detectCorners(ED.prev) || FULL.map(c => c.slice()));
+    ED.rot = page ? page.rot : 0;
+    ED.filter = page ? page.filter : lastFilter;
+    show('editor', true);
+    await setTab(tab);
+  } catch (e) { toast('Errore: ' + e.message); closeEditor(); }
+}
+function closeEditor() {
+  show('editor', false);
+  if (ED.prev && ED.prev !== ED.src) free(ED.prev);
+  free(ED.src); free($('#previewCanvas')); free($('#cropCanvas'));
+  $('#chips').innerHTML = '';
+  ED.src = ED.prev = ED.prevPx = ED.page = null;
+}
 async function setTab(t) {
   ED.tab = t;
   document.querySelectorAll('#tabSeg button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
@@ -792,6 +1086,7 @@ async function setTab(t) {
   $('#previewCanvas').classList.toggle('hidden', crop);
   $('#filterTools').classList.toggle('hidden', crop);
   await raf();
+  if (!ED.prev) return;
   if (crop) layoutCrop(); else { buildChips(); renderPreview(); }
 }
 document.querySelectorAll('#tabSeg button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
@@ -806,7 +1101,7 @@ function layoutCrop() {
   const box = $('#cropBox'); box.style.width = w + 'px'; box.style.height = h + 'px';
   const cv = $('#cropCanvas'), dpr = Math.min(window.devicePixelRatio || 1, 2);
   cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px';
-  const x = cv.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(ED.prev, 0, 0, cv.width, cv.height);
+  const x = cv.getContext('2d'); if (x) { x.imageSmoothingQuality = 'high'; x.drawImage(ED.prev, 0, 0, cv.width, cv.height); }
   const svg = $('#cropSvg'); svg.setAttribute('viewBox', `0 0 ${w} ${h}`); svg.setAttribute('width', w); svg.setAttribute('height', h);
   drawOverlay();
 }
@@ -822,13 +1117,12 @@ function drawOverlay(active = -1) {
   $('#cropSvg').innerHTML = s;
 }
 function updateLoupe(i) {
-  const L = $('#loupe'), c = L.querySelector('canvas'), x = c.getContext('2d');
+  const L = $('#loupe'), c = L.querySelector('canvas'), x = c.getContext('2d'); if (!x) return;
   const [nx, ny] = ED.corners[i], sx = nx * ED.prev.width, sy = ny * ED.prev.height;
   const size = 120 / (3 * ED.disp.s);
   x.fillStyle = '#05070e'; x.fillRect(0, 0, 240, 240);
   x.imageSmoothingQuality = 'high';
   x.drawImage(ED.prev, sx - size / 2, sy - size / 2, size, size, 0, 0, 240, 240);
-  // lati adiacenti
   const k = 240 / size, toL = ([px, py]) => [(px * ED.prev.width - sx) * k + 120, (py * ED.prev.height - sy) * k + 120];
   x.strokeStyle = '#7ef0da'; x.lineWidth = 3;
   [ED.corners[(i + 3) % 4], ED.corners[(i + 1) % 4]].forEach(o => { const [ax, ay] = toL(o); x.beginPath(); x.moveTo(120, 120); x.lineTo(ax, ay); x.stroke(); });
@@ -846,19 +1140,24 @@ stage.addEventListener('pointerdown', e => {
   ED.corners.forEach(([cx, cy], i) => { const dd = Math.hypot(cx * ED.disp.w - x, cy * ED.disp.h - y); if (dd < bd) { bd = dd; bi = i; } });
   if (bi < 0) return;
   e.preventDefault();
-  drag = { i: bi, ox: ED.corners[bi][0] * ED.disp.w - x, oy: ED.corners[bi][1] * ED.disp.h - y, r };
-  stage.setPointerCapture(e.pointerId);
+  drag = { i: bi, ox: ED.corners[bi][0] * ED.disp.w - x, oy: ED.corners[bi][1] * ED.disp.h - y, r, id: e.pointerId };
+  try { stage.setPointerCapture(e.pointerId); } catch (_) {}
   drawOverlay(bi); updateLoupe(bi);
 });
 stage.addEventListener('pointermove', e => {
-  if (!drag) return;
+  if (!drag || e.pointerId !== drag.id) return;
   const x = e.clientX - drag.r.left + drag.ox, y = e.clientY - drag.r.top + drag.oy;
   ED.corners[drag.i] = [clamp(x / ED.disp.w, 0, 1), clamp(y / ED.disp.h, 0, 1)];
   drawOverlay(drag.i); updateLoupe(drag.i);
 });
-const endDrag = () => { if (!drag) return; drag = null; drawOverlay(); $('#loupe').classList.add('hidden'); };
+const endDrag = e => {
+  if (!drag) return;
+  try { stage.releasePointerCapture(drag.id); } catch (_) {}
+  drag = null; drawOverlay(); $('#loupe').classList.add('hidden');
+};
 stage.addEventListener('pointerup', endDrag);
 stage.addEventListener('pointercancel', endDrag);
+stage.addEventListener('lostpointercapture', endDrag);
 window.addEventListener('resize', () => { if (!$('#editor').classList.contains('hidden') && ED.tab === 'crop') layoutCrop(); });
 
 $('#autoBtn').onclick = () => {
@@ -871,15 +1170,16 @@ $('#fullBtn').onclick = () => { ED.corners = FULL.map(c => c.slice()); drawOverl
 let previewToken = 0;
 async function renderPreview() {
   const t = ++previewToken; await raf(); if (t !== previewToken || !ED.prev) return;
-  const c = renderFrom(ED.prev, ED.corners, ED.rot, ED.filter, 1400);
-  if (t !== previewToken) return;
-  const pc = $('#previewCanvas'); pc.width = c.width; pc.height = c.height; pc.getContext('2d').drawImage(c, 0, 0);
+  try {
+    const c = renderFrom(ED.prev, ED.prevPx, ED.corners, ED.rot, ED.filter, 1400, 2e6);
+    if (t !== previewToken) { free(c); return; }
+    const pc = $('#previewCanvas'); pc.width = c.width; pc.height = c.height; pc.getContext('2d').drawImage(c, 0, 0); free(c);
+  } catch (e) { toast('Errore anteprima: ' + e.message); }
 }
 function buildChips() {
-  const wrap = $('#chips'); wrap.innerHTML = '';
-  const base = rotate(warp(ED.prev, ED.corners.map(([x, y]) => [x * ED.prev.width, y * ED.prev.height]), 200), ED.rot);
+  const wrap = $('#chips'); wrap.querySelectorAll('canvas').forEach(free); wrap.innerHTML = '';
   FILTERS.forEach(([id, label]) => {
-    const c = mk(base.width, base.height); c.getContext('2d').drawImage(base, 0, 0); applyFilter(c, id);
+    const c = renderFrom(ED.prev, ED.prevPx, ED.corners, ED.rot, id, 200, 1e5);
     const b = document.createElement('button');
     b.className = 'chip' + (id === ED.filter ? ' on' : '');
     b.innerHTML = `<div class="th"></div><span>${label}</span>`;
@@ -890,36 +1190,36 @@ function buildChips() {
 }
 $('#rotL').onclick = () => { ED.rot = (ED.rot + 3) % 4; buildChips(); renderPreview(); };
 $('#rotR').onclick = () => { ED.rot = (ED.rot + 1) % 4; buildChips(); renderPreview(); };
-$('#edCancel').onclick = closeEditor;
+$('#edCancel').onclick = () => closeEditor();
 $('#edSave').onclick = async () => {
+  if (!ED.src) { closeEditor(); return; }
   busy('Elaborazione…'); await raf();
+  const wasNew = !ED.page, from = ED.from;
   try {
-    const wasNew = !ED.page;
-    await savePage(ED.src, ED.corners, ED.rot, ED.filter, ED.page);
+    const firstBefore = ED.page ? docPages(ED.page.docId)[0] : null;
+    const p = await savePage(ED.src, ED.corners, ED.rot, ED.filter, ED.page, ED.docId);
     lastFilter = ED.filter; safe(store.set('filter', lastFilter));
-    const savedId = ED.page ? ED.page.id : null;
-    closeEditor(); renderGrid();
+    const doc = getDoc(p.docId);
+    if (!wasNew && firstBefore === p && doc) doc.autoFrom = null; // prima pagina ritoccata: rileggila
+    closeEditor();
+    if (from === 'viewer') renderViewer(true);
+    renderAll();
     toast(wasNew ? 'Pagina aggiunta' : 'Pagina aggiornata');
-    if (!wasNew && savedId === autoFrom) autoFrom = null; // prima pagina ritoccata: rileggila
-    autoNameMaybe();
+    autoNameMaybe(doc);
   } catch (e) { toast('Errore: ' + e.message); }
   finally { busy(false); }
 };
 
-/* ---------------- export ---------------- */
-$('#exportBtn').onclick = () => {
-  if (!pages.length) { toast('Nessuna pagina da esportare'); return; }
-  $('#sheet').classList.remove('hidden');
-};
+/* ---------------- esporta ---------------- */
 $('#sheet').onclick = e => { if (e.target.id === 'sheet') $('#sheet').classList.add('hidden'); };
 document.querySelectorAll('#sizeSeg button').forEach(b => b.onclick = () => {
   exportSize = b.dataset.size;
   document.querySelectorAll('#sizeSeg button').forEach(x => x.classList.toggle('on', x === b));
 });
-async function buildPDF() {
+async function buildPDF(docId) {
   if (!window.jspdf) throw new Error('Libreria PDF non caricata (serve internet la prima volta)');
   const { jsPDF } = window.jspdf; let doc = null;
-  for (const p of sorted()) {
+  for (const p of docPages(docId)) {
     const data = await blobToDataURL(p.processed), land = p.w > p.h, o = land ? 'l' : 'p';
     if (exportSize === 'a4') {
       if (!doc) doc = new jsPDF({ orientation: o, unit: 'mm', format: 'a4', compress: true }); else doc.addPage('a4', o);
@@ -940,41 +1240,106 @@ function download(blob, name) {
 }
 async function shareFiles(files) {
   if (!(navigator.canShare && navigator.canShare({ files }))) return false;
-  try { await navigator.share({ files, title: docName }); return true; }
+  try { await navigator.share({ files }); return true; }
   catch (e) { return e.name === 'AbortError'; }
 }
 $('#pdfDl').onclick = async () => {
+  const d = getDoc(openId); if (!d) return;
   busy('Creo il PDF…');
-  try { download(await buildPDF(), fileBase() + '.pdf'); $('#sheet').classList.add('hidden'); toast('PDF scaricato'); }
+  try { download(await buildPDF(d.id), fileBase(d.name) + '.pdf'); $('#sheet').classList.add('hidden'); toast('PDF scaricato'); }
   catch (e) { toast(e.message); } finally { busy(false); }
 };
 $('#pdfShare').onclick = async () => {
+  const d = getDoc(openId); if (!d) return;
   busy('Creo il PDF…');
   try {
-    const blob = await buildPDF(); busy(false);
-    const file = new File([blob], fileBase() + '.pdf', { type: 'application/pdf' });
-    if (!(await shareFiles([file]))) { download(blob, file.name); toast('Condivisione non disponibile: PDF scaricato'); }
+    const blob = await buildPDF(d.id); busy(false);
+    const file = new File([blob], fileBase(d.name) + '.pdf', { type: 'application/pdf' });
+    if (!(await shareFiles([file]))) { download(blob, file.name); toast('PDF scaricato'); }
     $('#sheet').classList.add('hidden');
   } catch (e) { toast(e.message); } finally { busy(false); }
 };
 $('#jpgShare').onclick = async () => {
-  const list = sorted(), base = fileBase();
-  const files = list.map((p, i) => new File([p.processed], `${base} ${i + 1}.jpg`, { type: 'image/jpeg' }));
+  const d = getDoc(openId); if (!d) return;
+  const ps = docPages(d.id), base = fileBase(d.name);
+  const files = ps.map((p, i) => new File([p.processed], ps.length > 1 ? `${base} ${i + 1}.jpg` : `${base}.jpg`, { type: 'image/jpeg' }));
   if (!(await shareFiles(files))) { files.forEach((f, i) => setTimeout(() => download(f, f.name), i * 350)); toast('Immagini scaricate'); }
   $('#sheet').classList.add('hidden');
 };
 
+/* ---------------- backup su iCloud / File ---------------- */
+const ZIP_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+async function getZip() { if (!window.JSZip) await loadScript(ZIP_SRC); return window.JSZip; }
+$('#backupBtn').onclick = () => $('#backupSheet').classList.remove('hidden');
+$('#backupSheet').onclick = e => { if (e.target.id === 'backupSheet') $('#backupSheet').classList.add('hidden'); };
+$('#backupMake').onclick = async () => {
+  const live = docs.filter(d => docPages(d.id).length);
+  if (!live.length) { toast('Nessuna scansione da salvare'); return; }
+  busy('Preparo il backup…');
+  try {
+    const JSZip = await getZip(), zip = new JSZip();
+    const meta = { app: 'scanner', version: 1, created: Date.now(), docs: live, pages: [] };
+    for (const d of live) for (const p of docPages(d.id)) {
+      const { original, processed, ...rest } = p;
+      meta.pages.push(rest);
+      zip.file(`pagine/${p.id}-originale.jpg`, original);
+      zip.file(`pagine/${p.id}.jpg`, processed);
+    }
+    zip.file('scanner.json', JSON.stringify(meta));
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE', mimeType: 'application/zip' });
+    const file = new File([blob], `Scanner backup ${todayStr()}.zip`, { type: 'application/zip' });
+    busy(false);
+    if (!(await shareFiles([file]))) { download(file, file.name); toast('Backup scaricato'); }
+    $('#backupSheet').classList.add('hidden');
+  } catch (e) { toast('Backup non riuscito: ' + e.message); }
+  finally { busy(false); }
+};
+$('#backupRestore').onclick = () => $('#restoreInput').click();
+$('#restoreInput').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  busy('Ripristino…');
+  try {
+    const JSZip = await getZip(), zip = await JSZip.loadAsync(f);
+    const mf = zip.file('scanner.json'); if (!mf) throw new Error('non è un backup di Scanner');
+    const meta = JSON.parse(await mf.async('string'));
+    let nd = 0, np = 0;
+    for (const d of meta.docs || []) if (!getDoc(d.id)) { docs.push(d); await safe(store.put('docs', d)); nd++; }
+    for (const p of meta.pages || []) {
+      if (pages.some(x => x.id === p.id)) continue;
+      const o = zip.file(`pagine/${p.id}-originale.jpg`), q = zip.file(`pagine/${p.id}.jpg`);
+      if (!o || !q) continue;
+      const page = { ...p, original: new Blob([await o.async('arraybuffer')], { type: 'image/jpeg' }), processed: new Blob([await q.async('arraybuffer')], { type: 'image/jpeg' }) };
+      pages.push(page); await safe(store.put('pages', page)); np++;
+    }
+    $('#backupSheet').classList.add('hidden'); renderAll();
+    toast(nd || np ? `Ripristinati ${nd} documenti (${np} pagine)` : 'Tutto era già presente');
+  } catch (e) { toast('Ripristino non riuscito: ' + e.message); }
+  finally { busy(false); }
+};
+
 /* ---------------- avvio ---------------- */
 (async () => {
+  const ic = document.querySelector('link[rel="apple-touch-icon"]'); if (ic) $('#brandIcon').src = ic.href;
+  $('#editBtn').innerHTML = ICON.pen;
   try { await store.open(); } catch (e) { console.warn(e); toast('Salvataggio locale non disponibile'); }
   if (navigator.storage && navigator.storage.persist) safe(navigator.storage.persist());
-  pages = (await safe(store.all())) || [];
-  docName = (await safe(store.get('name'))) || defaultName();
+  pages = (await safe(store.all('pages'))) || [];
+  docs = (await safe(store.all('docs'))) || [];
   lastFilter = (await safe(store.get('filter'))) || 'magic';
-  const an = await safe(store.get('autoName')); autoName = an === null || an === undefined ? true : !!an;
-  autoFrom = (await safe(store.get('autoFrom'))) || null;
-  $('#docName').value = docName;
-  renderGrid();
+  currentId = (await safe(store.get('current'))) || null;
+  // Le pagine della versione precedente diventano un documento in archivio
+  const orphans = pages.filter(p => !p.docId || !getDoc(p.docId));
+  if (orphans.length) {
+    const d = await newDoc();
+    const oldName = await safe(store.get('name')), oldAuto = await safe(store.get('autoName'));
+    if (oldName) d.name = oldName;
+    if (oldAuto === false) d.autoName = false;
+    for (const p of orphans) { p.docId = d.id; await safe(store.put('pages', p)); }
+    await safe(store.put('docs', d));
+  }
+  for (const d of [...docs]) if (!docPages(d.id).length) { docs = docs.filter(x => x !== d); safe(store.del('docs', d.id)); }
+  if (currentId && !getDoc(currentId)) currentId = null;
+  renderHome();
 })();
 </script>
 </body>
