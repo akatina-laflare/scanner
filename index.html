@@ -322,7 +322,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </div>
   <div class="ed-tools">
     <div id="cropTools">
-      <p class="hint">Trascina gli angoli sui bordi del foglio</p>
+      <p class="hint">Trascina gli angoli o il centro dei lati sui bordi del foglio</p>
       <div class="tool-row" style="margin-top:12px">
         <button id="autoBtn" class="tool glass"><svg class="i" viewBox="0 0 24 24"><path d="M4 20L14 10"/><path d="M15.5 3v3M19.5 6.5l-2 2M21 10h-3M12 4.5l1.5 1.5"/></svg><span>Auto</span></button>
         <button id="fullBtn" class="tool glass"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span>Tutta</span></button>
@@ -395,7 +395,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -1342,6 +1342,11 @@ function drawOverlay(active = -1) {
   let s = `<defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fb4ff"/><stop offset="1" stop-color="#5ee8cf"/></linearGradient></defs>`;
   s += `<path d="M0 0H${w}V${h}H0Z M${P.map(p => p.join(' ')).join(' L')} Z" fill="rgba(4,7,14,.58)" fill-rule="evenodd"/>`;
   s += `<polygon points="${P.map(p => p.join(',')).join(' ')}" fill="rgba(142,166,255,.08)" stroke="url(#lg)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  // maniglie sui lati (4-7): spostano tutto il bordo
+  P.forEach(([x, y], i) => {
+    const [x2, y2] = P[(i + 1) % 4], mx = (x + x2) / 2, my = (y + y2) / 2, ang = Math.atan2(y2 - y, x2 - x) * 180 / Math.PI, on = active === i + 4;
+    s += `<rect x="${on ? -18 : -14}" y="${on ? -6 : -5}" width="${on ? 36 : 28}" height="${on ? 12 : 10}" rx="${on ? 6 : 5}" transform="translate(${mx} ${my}) rotate(${ang})" fill="${on ? '#5ee8cf' : 'rgba(255,255,255,.9)'}" stroke="rgba(10,14,25,.55)" stroke-width="1"/>`;
+  });
   P.forEach(([x, y], i) => {
     const r = i === active ? 17 : 13;
     s += `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(255,255,255,.22)" stroke="#fff" stroke-width="2"/><circle cx="${x}" cy="${y}" r="3.2" fill="#fff"/>`;
@@ -1350,14 +1355,16 @@ function drawOverlay(active = -1) {
 }
 function updateLoupe(i) {
   const L = $('#loupe'), c = L.querySelector('canvas'), x = c.getContext('2d'); if (!x) return;
-  const [nx, ny] = ED.corners[i], sx = nx * ED.prev.width, sy = ny * ED.prev.height;
+  const isEdge = i >= 4, e0 = ED.corners[i % 4], e1 = ED.corners[(i + 1) % 4];
+  const [nx, ny] = isEdge ? [(e0[0] + e1[0]) / 2, (e0[1] + e1[1]) / 2] : ED.corners[i], sx = nx * ED.prev.width, sy = ny * ED.prev.height;
   const size = 120 / (3 * ED.disp.s);
   x.fillStyle = '#05070e'; x.fillRect(0, 0, 240, 240);
   x.imageSmoothingQuality = 'high';
   x.drawImage(ED.prev, sx - size / 2, sy - size / 2, size, size, 0, 0, 240, 240);
   const k = 240 / size, toL = ([px, py]) => [(px * ED.prev.width - sx) * k + 120, (py * ED.prev.height - sy) * k + 120];
   x.strokeStyle = '#7ef0da'; x.lineWidth = 3;
-  [ED.corners[(i + 3) % 4], ED.corners[(i + 1) % 4]].forEach(o => { const [ax, ay] = toL(o); x.beginPath(); x.moveTo(120, 120); x.lineTo(ax, ay); x.stroke(); });
+  if (isEdge) { const [ax, ay] = toL(e0), [bx, by] = toL(e1); x.beginPath(); x.moveTo(ax, ay); x.lineTo(bx, by); x.stroke(); }
+  else [ED.corners[(i + 3) % 4], ED.corners[(i + 1) % 4]].forEach(o => { const [ax, ay] = toL(o); x.beginPath(); x.moveTo(120, 120); x.lineTo(ax, ay); x.stroke(); });
   x.strokeStyle = 'rgba(255,255,255,.95)'; x.lineWidth = 2;
   x.beginPath(); x.moveTo(120, 96); x.lineTo(120, 144); x.moveTo(96, 120); x.lineTo(144, 120); x.stroke();
   L.classList.toggle('right', nx < 0.5);
@@ -1370,14 +1377,28 @@ stage.addEventListener('pointerdown', e => {
   const r = $('#cropBox').getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   let bi = -1, bd = 46;
   ED.corners.forEach(([cx, cy], i) => { const dd = Math.hypot(cx * ED.disp.w - x, cy * ED.disp.h - y); if (dd < bd) { bd = dd; bi = i; } });
+  if (bi < 0 || bd > 26) { // se non sei proprio su un angolo, prova le maniglie dei lati
+    let be = -1, bde = 40;
+    ED.corners.forEach(([cx, cy], i) => { const [c2x, c2y] = ED.corners[(i + 1) % 4]; const dd = Math.hypot((cx + c2x) / 2 * ED.disp.w - x, (cy + c2y) / 2 * ED.disp.h - y); if (dd < bde) { bde = dd; be = i; } });
+    if (be >= 0 && (bi < 0 || bde < bd)) bi = be + 4;
+  }
   if (bi < 0) return;
   e.preventDefault();
-  drag = { i: bi, ox: ED.corners[bi][0] * ED.disp.w - x, oy: ED.corners[bi][1] * ED.disp.h - y, r, id: e.pointerId };
+  drag = bi < 4
+    ? { i: bi, ox: ED.corners[bi][0] * ED.disp.w - x, oy: ED.corners[bi][1] * ED.disp.h - y, r, id: e.pointerId }
+    : { i: bi, sx: x, sy: y, start: ED.corners.map(c => c.slice()), r, id: e.pointerId };
   try { stage.setPointerCapture(e.pointerId); } catch (_) {}
   drawOverlay(bi); updateLoupe(bi);
 });
 stage.addEventListener('pointermove', e => {
   if (!drag || e.pointerId !== drag.id) return;
+  if (drag.i >= 4) { // sposta tutto il lato, i due angoli insieme
+    const a = drag.i - 4, b = (a + 1) % 4, A = drag.start[a], B = drag.start[b];
+    let dx = (e.clientX - drag.r.left - drag.sx) / ED.disp.w, dy = (e.clientY - drag.r.top - drag.sy) / ED.disp.h;
+    dx = clamp(dx, -Math.min(A[0], B[0]), 1 - Math.max(A[0], B[0])); dy = clamp(dy, -Math.min(A[1], B[1]), 1 - Math.max(A[1], B[1]));
+    ED.corners[a] = [A[0] + dx, A[1] + dy]; ED.corners[b] = [B[0] + dx, B[1] + dy];
+    drawOverlay(drag.i); updateLoupe(drag.i); return;
+  }
   const x = e.clientX - drag.r.left + drag.ox, y = e.clientY - drag.r.top + drag.oy;
   ED.corners[drag.i] = [clamp(x / ED.disp.w, 0, 1), clamp(y / ED.disp.h, 0, 1)];
   drawOverlay(drag.i); updateLoupe(drag.i);
