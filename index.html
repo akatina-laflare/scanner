@@ -194,6 +194,11 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .fmt .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(142,166,255,.2);margin-bottom:3px}
 .fmt b{font-size:13px;font-weight:620}.fmt small{font-size:10.5px;color:var(--muted);line-height:1.2}
 .fmt[hidden],#scopeSeg[hidden]{display:none}
+.tgl{width:100%;display:flex;align-items:center;gap:12px;margin-top:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);text-align:left;font-size:14px;font-weight:560}
+.tgl small{display:block;color:var(--muted);font-size:11.5px;font-weight:450;margin-top:1px}
+.tgl .sw{flex:0 0 auto;width:42px;height:25px;border-radius:13px;background:rgba(255,255,255,.18);position:relative;transition:background .2s}
+.tgl .sw::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tgl[aria-pressed="true"] .sw{background:#5ee8cf}.tgl[aria-pressed="true"] .sw::after{transform:translateX(17px)}
 .modal-wrap{display:grid;place-items:center;padding:24px;z-index:9}
 .modal{width:100%;max-width:330px;padding:22px;text-align:center;background:rgba(28,34,54,.78);animation:up .25s cubic-bezier(.2,.9,.3,1)}
 .modal p{font-size:16px;line-height:1.45;margin-bottom:18px}
@@ -363,14 +368,15 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <button data-size="a4" class="on">PDF in pagine A4</button>
       <button data-size="fit">PDF grande come la foto</button>
     </div>
+    <button class="tgl" id="pdfTextBtn" aria-pressed="false"><span class="sw"></span><span>Testo selezionabile nel PDF<small>Puoi cercare e copiare il testo · qualche secondo in più</small></span></button>
     <div class="sheet-lbl">Altri formati</div>
     <div class="fmt-grid">
       <button class="fmt" id="exJpg"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/></svg></span><b>Foto JPG</b><small>Una per pagina</small></button>
       <button class="fmt" id="exLong"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M7 9h10M7 15h10"/></svg></span><b>Immagine lunga</b><small>Tutto in una foto</small></button>
-      <button class="fmt" id="exDocx"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3.5H7A2.5 2.5 0 004.5 6v12A2.5 2.5 0 007 20.5h10a2.5 2.5 0 002.5-2.5V9L14 3.5z"/><path d="M8 12l1.3 5 1.7-4 1.7 4 1.3-5"/></svg></span><b>Word</b><small>Testo modificabile</small></button>
+      <button class="fmt" id="exDocx"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3.5H7A2.5 2.5 0 004.5 6v12A2.5 2.5 0 007 20.5h10a2.5 2.5 0 002.5-2.5V9L14 3.5z"/><path d="M8 12l1.3 5 1.7-4 1.7 4 1.3-5"/></svg></span><b>Word</b><small>Impaginato come l'originale</small></button>
       <button class="fmt" id="exTxt"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M5 6h14M5 10h14M5 14h10M5 18h7"/></svg></span><b>Testo</b><small>Da copiare (TXT)</small></button>
       <button class="fmt" id="exPptx"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2.5"/><path d="M12 16.5V20M8.5 20h7"/></svg></span><b>PowerPoint</b><small>Pagine come slide</small></button>
-      <button class="fmt" id="exXlsx"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4v16"/></svg></span><b>Excel</b><small>Tabelle e righe</small></button>
+      <button class="fmt" id="exXlsx"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 4v16"/></svg></span><b>Excel</b><small>Tabelle in colonne</small></button>
     </div>
   </div>
 </div>
@@ -407,7 +413,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '13';
+const APP_VERSION = '14';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -992,7 +998,7 @@ function getOCR() {
 }
 async function ocrText(blob) {
   const c = await blobToCanvas(blob, 3e6, 1800);
-  try { const { data } = await (await getOCR()).recognize(c); return data.text || ''; }
+  try { const { data } = await (await getOCR()).recognize(c, { rectangle: { left: 0, top: 0, width: c.width, height: c.height } }); return data.text || ''; }
   finally { free(c); }
 }
 // Solo tipi riconoscibili con sicurezza: se non è chiaro, resta un nome generico (meglio che un nome sbagliato)
@@ -1666,19 +1672,33 @@ document.querySelectorAll('#sizeSeg button').forEach(b => b.onclick = () => {
   exportSize = b.dataset.size;
   document.querySelectorAll('#sizeSeg button').forEach(x => x.classList.toggle('on', x === b));
 });
-async function buildPDF(docId, list) {
+async function buildPDF(docId, list, layers) {
   if (!window.jspdf) throw new Error('Libreria PDF non caricata (serve internet la prima volta)');
   const { jsPDF } = window.jspdf; let doc = null;
-  for (const p of (list || docPages(docId))) {
-    const data = await blobToDataURL(p.processed), land = p.w > p.h, o = land ? 'l' : 'p';
+  const pages = list || docPages(docId);
+  for (let i = 0; i < pages.length; i++) {
+    const p = pages[i], data = await blobToDataURL(p.processed), land = p.w > p.h, o = land ? 'l' : 'p';
+    let ox = 0, oy = 0, w, h, k; // k: da unità della pagina a punti tipografici
     if (exportSize === 'a4') {
       if (!doc) doc = new jsPDF({ orientation: o, unit: 'mm', format: 'a4', compress: true }); else doc.addPage('a4', o);
-      const PW = land ? 297 : 210, PH = land ? 210 : 297, s = Math.min(PW / p.w, PH / p.h), w = p.w * s, h = p.h * s;
-      doc.addImage(data, 'JPEG', (PW - w) / 2, (PH - h) / 2, w, h, undefined, 'NONE');
+      const PW = land ? 297 : 210, PH = land ? 210 : 297, s = Math.min(PW / p.w, PH / p.h); w = p.w * s; h = p.h * s; ox = (PW - w) / 2; oy = (PH - h) / 2; k = 72 / 25.4;
+      doc.addImage(data, 'JPEG', ox, oy, w, h, undefined, 'NONE');
     } else {
-      const w = p.w * 72 / 300, h = p.h * 72 / 300;
+      w = p.w * 72 / 300; h = p.h * 72 / 300; k = 1;
       if (!doc) doc = new jsPDF({ orientation: o, unit: 'pt', format: [w, h], compress: true }); else doc.addPage([w, h], o);
       doc.addImage(data, 'JPEG', 0, 0, w, h, undefined, 'NONE');
+    }
+    // testo invisibile sopra la scansione: si può cercare, selezionare e copiare
+    const L = layers && layers[i];
+    if (L) {
+      doc.setFont('helvetica', 'normal');
+      for (const wd of L.words) {
+        const t = wd.t.normalize('NFC').replace(/[^\u0020-\u00ff€’‘“”–—]/g, ''); if (!t) continue;
+        const bw = (wd.b.x1 - wd.b.x0) / L.W * w, bh = (wd.b.y1 - wd.b.y0) / L.H * h;
+        const size = Math.max(2, bh * k * .95); doc.setFontSize(size);
+        const tw = doc.getTextWidth(t); if (!(tw > 0)) continue;
+        doc.text(t, ox + wd.b.x0 / L.W * w, oy + wd.b.y1 / L.H * h - bh * .18, { renderingMode: 'invisible', horizontalScale: Math.max(.3, Math.min(3, bw / tw)) });
+      }
     }
   }
   return doc.output('blob');
@@ -1694,7 +1714,11 @@ async function shareFiles(files) {
   catch (e) { return e.name === 'AbortError'; }
 }
 // Foglio "Condividi": un solo menu per documento, pagina aperta e anteprima non salvata
-let EX = null;
+let EX = null, pdfText = false;
+try { pdfText = localStorage.getItem('scanner-pdf-text') === '1'; } catch (e) {}
+const syncPdfText = () => $('#pdfTextBtn').setAttribute('aria-pressed', pdfText ? 'true' : 'false');
+$('#pdfTextBtn').onclick = () => { pdfText = !pdfText; syncPdfText(); try { localStorage.setItem('scanner-pdf-text', pdfText ? '1' : '0'); } catch (e) {} };
+syncPdfText();
 function openExport(cfg) {
   EX = { scope: 'all', ...cfg };
   const seg = $('#scopeSeg'); seg.hidden = !cfg.page;
@@ -1726,9 +1750,17 @@ async function exRun(label, fn) {
   finally { busy(false); }
 }
 $('#exPdf').onclick = () => exRun('PDF', async (list, base) => {
+  let layers = null;
+  if (pdfText) {
+    layers = [];
+    for (let i = 0; i < list.length; i++) {
+      busy(list.length > 1 ? `Leggo il testo · pagina ${i + 1} di ${list.length}…` : 'Leggo il testo…'); await raf();
+      try { layers.push(await ocrWords(list[i].processed)); } catch (e) { throw new Error('Lettura del testo non disponibile: serve internet la prima volta'); }
+    }
+  }
   busy('Creo il PDF…'); await raf();
-  const t = Date.now(), blob = await buildPDF(null, list); busy(false);
-  await deliver([new File([blob], base + '.pdf', { type: 'application/pdf' })], 'PDF', Date.now() - t > 2500);
+  const t = Date.now(), blob = await buildPDF(null, list, layers); busy(false);
+  await deliver([new File([blob], base + '.pdf', { type: 'application/pdf' })], 'PDF', !!layers || Date.now() - t > 2500);
 });
 $('#exJpg').onclick = () => exRun('JPG', async (list, base) => {
   const files = list.map((p, i) => new File([p.processed], list.length > 1 ? `${base} ${i + 1}.jpg` : `${base}.jpg`, { type: 'image/jpeg' }));
@@ -1768,26 +1800,36 @@ $('#exTxt').onclick = () => exRun('Testo', async (list, base) => {
   if (!body.replace(/[—\sPagina0-9]/g, '')) { toast('Nessun testo trovato'); return; }
   await deliver([new File(['﻿' + body], base + '.txt', { type: 'text/plain' })], 'Testo', true);
 });
+// legge l'impaginazione di tutte le pagine, con avanzamento
+async function exLayouts(list, what) {
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    busy(list.length > 1 ? `${what} · pagina ${i + 1} di ${list.length}…` : `${what}…`); await raf();
+    try { out.push(await readLayout(list[i].processed)); }
+    catch (e) { console.warn(e); throw new Error(/memoria|Memory/i.test(e.message || '') ? 'Memoria insufficiente: prova con meno pagine' : 'Lettura del testo non disponibile: serve internet la prima volta'); }
+  }
+  return out;
+}
 $('#exDocx').onclick = () => exRun('Word', async (list, base) => {
-  const texts = await exOcr(list); busy('Creo il file Word…'); await raf();
-  const Z = await getZip(), z = new Z();
-  const P = t => `<w:p><w:r><w:t xml:space="preserve">${xmlEsc(t)}</w:t></w:r></w:p>`;
-  const body = texts.map((t, i) => (i ? '<w:p><w:r><w:br w:type="page"/></w:r></w:p>' : '') + (paras(t).map(P).join('') || P(''))).join('');
-  z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
-  z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-  z.file('word/document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>`);
-  const blob = await z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
-  busy(false);
+  const pages = await exLayouts(list, 'Ricostruisco l\'impaginazione');
+  busy('Creo il file Word…'); await raf();
+  const blob = await layoutDocx(pages); busy(false);
   await deliver([new File([blob], base + '.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })], 'File Word', true);
 });
 $('#exXlsx').onclick = () => exRun('Excel', async (list, base) => {
-  const texts = await exOcr(list); busy('Creo il file Excel…'); await raf();
+  const pages = await exLayouts(list, 'Leggo tabelle e righe'); busy('Creo il file Excel…'); await raf();
   const Z = await getZip(), z = new Z();
   const col = n => { let s = ''; n++; while (n) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = (n - m - 1) / 26; } return s; };
-  const sheets = texts.map(t => {
-    // ogni riga del foglio diventa una riga di Excel; spazi larghi o tabulazioni separano le colonne
-    const rows = t.split('\n').map(l => l.trim()).filter(Boolean).map(l => l.split(/\t| {2,}|\s\|\s/).map(c => c.trim()).filter(Boolean));
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((r, i) => `<row r="${i + 1}">${r.map((c, j) => /^-?\d+(?:[.,]\d+)?$/.test(c) ? `<c r="${col(j)}${i + 1}"><v>${c.replace(',', '.')}</v></c>` : `<c r="${col(j)}${i + 1}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(c)}</t></is></c>`).join('')}</row>`).join('')}</sheetData></worksheet>`;
+  // ogni riga del documento è una riga di Excel; nelle tabelle ogni colonna va nella sua colonna
+  const cell = (v, r, c) => /^-?\d{1,3}(?:\.\d{3})*(?:,\d+)?$|^-?\d+(?:[.,]\d+)?$/.test(v) ? `<c r="${col(c)}${r}"><v>${v.includes(',') ? v.replace(/\./g, '').replace(',', '.') : v}</v></c>` : `<c r="${col(c)}${r}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+  const sheets = pages.map(({ L }) => {
+    const rows = [];
+    for (const bl of L.blocks) {
+      if (bl.type === 'table') for (const r of bl.rows) { const cells = bl.cols.map(() => []); for (const g of r.segs) { let bi = 0, bd = 1e9; bl.cols.forEach(([a, b], j) => { const d = Math.min(Math.abs(g.b.x0 - a), Math.abs(g.b.x1 - b)); if (d < bd) { bd = d; bi = j; } }); cells[bi].push(g.text); } rows.push(cells.map(c => c.join(' '))); }
+      else if (bl.type === 'tabs') rows.push(bl.row.segs.map(g => g.text));
+      else { let t = ''; bl.lines.forEach((l, k) => { t += (k ? (bl.join[k - 1] ? ' ' : '\n') : '') + l.text; }); rows.push([t]); }
+    }
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="48" customWidth="1"/><col min="2" max="12" width="16" customWidth="1"/></cols><sheetData>${rows.map((r, i) => `<row r="${i + 1}">${r.map((v, j) => v ? cell(v.trim(), i + 1, j) : '').join('')}</row>`).join('')}</sheetData></worksheet>`;
   });
   z.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`);
   z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
@@ -1798,6 +1840,439 @@ $('#exXlsx').onclick = () => exRun('Excel', async (list, base) => {
   busy(false);
   await deliver([new File([blob], base + '.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })], 'File Excel', true);
 });
+// parole con posizione, per il PDF con testo
+async function ocrWords(blob) {
+  const o = await ocrPage(blob);
+  try { const words = []; for (const li of o.lines) for (const w of li.words) if (w.t && w.t.trim() && w.c > 30) words.push(w); return { W: o.W, H: o.H, words }; }
+  finally { free(o.c); }
+}
+/* ---------------- impaginazione: dalla scansione a un Word che le somiglia ---------------- */
+// Lettura del testo con le posizioni di ogni riga e parola
+async function ocrPage(blob) {
+  const c = await blobToCanvas(blob, 3.6e6, 2400); // abbastanza grande da leggere anche il testo piccolo
+  // il rettangolo va sempre indicato: Tesseract altrimenti ricorda quello della lettura precedente
+  const { data } = await (await getOCR()).recognize(c, { rectangle: { left: 0, top: 0, width: c.width, height: c.height } }, { blocks: true, text: true });
+  const lines = [];
+  for (const bl of data.blocks || []) for (const pa of bl.paragraphs || []) for (const li of pa.lines || [])
+    lines.push({ conf: li.confidence, ra: li.rowAttributes || null, words: (li.words || []).map(w => ({ t: w.text, c: w.confidence, b: w.bbox })) });
+  return { c, W: c.width, H: c.height, lines, text: data.text || '' };
+}
+async function analyzePage(o) {
+  const { c, W, H } = o, img = ctx2d(c).getImageData(0, 0, W, H).data, N = W * H;
+  const G = new Uint8Array(N);
+  for (let i = 0, p = 0; p < N; p++, i += 4) G[p] = (img[i] * 77 + img[i + 1] * 150 + img[i + 2] * 29) >> 8;
+  const med = arr => { if (!arr.length) return 0; const s = Float64Array.from(arr).sort(); return s[s.length >> 1]; };
+  // colore della carta
+  const hist = new Uint32Array(256); for (let p = 0; p < N; p += 3) hist[G[p]]++;
+  let bg = 255, acc = 0, tot = 0; for (let k = 0; k < 256; k++) tot += hist[k];
+  for (let k = 255; k >= 0; k--) { acc += hist[k]; if (acc > tot * .35) { bg = k; break; } }
+  const inkT = bg - Math.max(55, bg * .25);
+  const isDesc = t => /[gjpqyQ,;]/.test(t), isTall = t => /[A-Zbdfhklt0-9ÀÈÉÌÒÙàèéìòù'"!?\/\\()\[\]{}|&%$#@]/.test(t);
+  // altezza del carattere (em) dalla scatola della parola
+  const wordEm = w => { const h = w.b.y1 - w.b.y0, t = w.t.replace(/[^\p{L}\p{N}&%$#@'"!?()\/]/gu, ''); if (!t) return 0; const k = (isTall(t) ? .72 : .52) + (isDesc(t) ? .21 : 0); return h / k; };
+  // 1) segmenti: pezzi di riga separati da spazi larghi (colonne, testo a destra)
+  const segs = [];
+  for (const li of o.lines) {
+    const ws = li.words.filter(w => w.t && w.t.trim() && w.b.x1 > w.b.x0 && w.b.y1 > w.b.y0);
+    if (!ws.length) continue;
+    ws.sort((a, b) => a.b.x0 - b.b.x0);
+    let emL = med(ws.map(wordEm).filter(v => v > 0));
+    if (li.ra && li.ra.row_height) { const xh = li.ra.row_height - li.ra.ascenders - li.ra.descenders; if (xh > 3) emL = (emL ? (emL + xh / .52) / 2 : xh / .52); }
+    let cur = [ws[0]];
+    const start = segs.length, flush = () => { segs.push({ words: cur, emLine: emL }); };
+    for (let k = 1; k < ws.length; k++) {
+      const gap = ws[k].b.x0 - ws[k - 1].b.x1;
+      if (gap > Math.max(1.4 * emL, 12)) { flush(); cur = [ws[k]]; } else cur.push(ws[k]);
+    }
+    flush();
+    if (segs.length - start > 1) for (let k = start; k < segs.length; k++) segs[k].emLine = 0; // riga mista: l'altezza di Tesseract vale per il pezzo più grande
+  }
+  const S = [], drop = [];
+  for (const s of segs) {
+    const ws = s.words, conf = ws.reduce((a, w) => a + w.c * w.t.length, 0) / Math.max(1, ws.reduce((a, w) => a + w.t.length, 0));
+    const text = ws.map(w => w.t).join(' ').trim();
+    const letters = (text.match(/[\p{L}\p{N}]/gu) || []).length;
+    const b = { x0: Math.min(...ws.map(w => w.b.x0)), y0: Math.min(...ws.map(w => w.b.y0)), x1: Math.max(...ws.map(w => w.b.x1)), y1: Math.max(...ws.map(w => w.b.y1)) };
+    const em = med(ws.map(wordEm).filter(v => v > 0)) || s.emLine || (b.y1 - b.y0);
+    // scarta il "testo" inventato su disegni, timbri e scritte a mano: diventerà immagine
+    if (conf < 62 || letters < Math.max(1, text.length * .5) || (b.y1 - b.y0) > em * 2.2 || (letters <= 2 && conf < 85)) { drop.push(b); continue; }
+    S.push({ text, b, em, emBox: med(ws.map(wordEm).filter(v => v > 0)), emRa: s.emLine || 0, conf, words: ws });
+  }
+  // 3) fasce di sfondo (rettangoli grigi o colorati dietro il testo)
+  const sc = 4, w4 = Math.ceil(W / sc), h4 = Math.ceil(H / sc), M = new Uint8Array(w4 * h4), C = new Uint8Array(w4 * h4);
+  for (let y = 0; y < h4; y++) for (let x = 0; x < w4; x++) {
+    const g = G[Math.min(H - 1, y * sc + 2) * W + Math.min(W - 1, x * sc + 2)];
+    if (g < bg - 14) M[y * w4 + x] = 1;
+    if (g < inkT && x > w4 * .012 && x < w4 * .988 && y > h4 * .01 && y < h4 * .99) C[y * w4 + x] = 1; // i bordi della foto spesso hanno ombre
+  }
+  const comps = (mask, fn) => {
+    const lab = new Int32Array(w4 * h4), st = new Int32Array(w4 * h4); let id = 0;
+    for (let i = 0; i < w4 * h4; i++) {
+      if (!mask[i] || lab[i]) continue; id++; let sp = 0, n = 0, bx0 = 1e9, by0 = 1e9, bx1 = -1, by1 = -1; st[sp++] = i; lab[i] = id;
+      while (sp) { const p = st[--sp], x = p % w4, y = (p / w4) | 0; n++; if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y;
+        for (const q of [x > 0 ? p - 1 : -1, x < w4 - 1 ? p + 1 : -1, p - w4, p + w4]) if (q >= 0 && q < w4 * h4 && mask[q] && !lab[q]) { lab[q] = id; st[sp++] = q; } }
+      fn({ x0: bx0 * sc, y0: by0 * sc, x1: (bx1 + 1) * sc, y1: (by1 + 1) * sc, n, fill: n / ((bx1 - bx0 + 1) * (by1 - by0 + 1)) });
+    }
+  };
+  const bands = [];
+  comps(M, r => {
+    const w = r.x1 - r.x0, h = r.y1 - r.y0;
+    if (w < W * .25 || h < 14 || r.fill < .72 || h > H * .5) return;
+    // colore della fascia: la mediana dei pixel che non sono inchiostro
+    let cr = [], cg = [], cb = [];
+    for (let y = r.y0; y < r.y1; y += 3) for (let x = r.x0; x < r.x1; x += 5) { const p = y * W + x; if (G[p] > inkT && G[p] < bg - 10) { cr.push(img[p * 4]); cg.push(img[p * 4 + 1]); cb.push(img[p * 4 + 2]); } }
+    const col = [med(cr), med(cg), med(cb)].map(v => Math.round(v)), L = col[0] * .3 + col[1] * .59 + col[2] * .11;
+    if (cr.length < 20 || L < 140) return; // troppo scuro: è un'immagine, non una fascia
+    bands.push({ b: { x0: r.x0, y0: r.y0, x1: Math.min(W, r.x1), y1: Math.min(H, r.y1) }, color: col });
+  });
+  // dentro le fasce conta come inchiostro solo ciò che è molto più scuro della fascia stessa
+  for (const bd of bands) {
+    const lum = bd.color[0] * .3 + bd.color[1] * .59 + bd.color[2] * .11;
+    for (let y = Math.floor(bd.b.y0 / sc); y < Math.min(h4, Math.ceil(bd.b.y1 / sc)); y++) for (let x = Math.floor(bd.b.x0 / sc); x < Math.min(w4, Math.ceil(bd.b.x1 / sc)); x++)
+      if (G[Math.min(H - 1, y * sc + 2) * W + Math.min(W - 1, x * sc + 2)] > lum - 60) C[y * w4 + x] = 0;
+  }
+  // 4) immagini: inchiostro che non è testo letto (loghi, firme, scritte a mano, timbri, linee)
+  const T = new Uint8Array(w4 * h4);
+  const markBox = (b, pad) => { for (let y = Math.max(0, Math.floor((b.y0 - pad) / sc)); y <= Math.min(h4 - 1, Math.ceil((b.y1 + pad) / sc)); y++) for (let x = Math.max(0, Math.floor((b.x0 - pad) / sc)); x <= Math.min(w4 - 1, Math.ceil((b.x1 + pad) / sc)); x++) T[y * w4 + x] = 1; };
+  for (const b of drop) markBox(b, 2);
+  for (const s of S) { const pad = s.em * .25; for (let y = Math.max(0, Math.floor((s.b.y0 - pad) / sc)); y <= Math.min(h4 - 1, Math.ceil((s.b.y1 + pad) / sc)); y++) for (let x = Math.max(0, Math.floor((s.b.x0 - pad) / sc)); x <= Math.min(w4 - 1, Math.ceil((s.b.x1 + pad) / sc)); x++) T[y * w4 + x] = 1; }
+  const I = new Uint8Array(w4 * h4);
+  for (let y = 0; y < h4; y++) for (let x = 0; x < w4; x++) {
+    const p = y * w4 + x; if (!C[p] || T[p]) continue;
+    for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const yy = y + dy, xx = x + dx; if (yy >= 0 && yy < h4 && xx >= 0 && xx < w4 && !T[yy * w4 + xx]) I[yy * w4 + xx] = 1; }
+  }
+  const pics = [], rules = [];
+  const edge = Math.min(W, H) * .02;
+  comps(I, r => {
+    const b = { x0: Math.max(0, r.x0 + 10), y0: Math.max(0, r.y0 + 10), x1: Math.min(W, r.x1 - 10), y1: Math.min(H, r.y1 - 10) }; // tolgo l'allargamento usato per unire i pezzi
+    const w = b.x1 - b.x0, h = b.y1 - b.y0; if (w <= 0 || h <= 0) return;
+    if (b.x0 < edge * .5 && b.x1 > W - edge * .5 && h < H * .03) return; // ombre sul bordo
+    if ((b.y1 < edge || b.y0 > H - edge || b.x1 < edge || b.x0 > W - edge)) return;
+    let ink = 0; for (let y = Math.floor(b.y0 / sc); y < Math.ceil(b.y1 / sc); y++) for (let x = Math.floor(b.x0 / sc); x < Math.ceil(b.x1 / sc); x++) if (C[y * w4 + x] && !T[y * w4 + x]) ink++;
+    if (ink < 6) return;
+    if (w * h > W * H * .2 && ink * sc * sc < w * h * .08) return; // cornice o ombra, non un'immagine
+    if (h <= Math.max(8, H * .006) && w > W * .2) { rules.push({ b, color: [0, 0, 0] }); return; } // linea orizzontale
+    if (w * h < (W * .018) ** 2) return; // puntini e sporco
+    pics.push({ b });
+  });
+  // testo letto male (scritte a mano, stampa sbiadita): resta com'è, come immagine al suo posto
+  for (const b of drop) {
+    let ink = 0; for (let y = b.y0; y < b.y1; y += 2) for (let x = b.x0; x < b.x1; x += 2) if (G[y * W + x] < inkT) ink++;
+    if (ink > 3) pics.push({ b: { x0: Math.max(0, b.x0 - 3), y0: Math.max(0, b.y0 - 3), x1: Math.min(W, b.x1 + 3), y1: Math.min(H, b.y1 + 3) } });
+  }
+  // unisco i pezzi d'immagine che si toccano
+  for (let k = 0; k < pics.length; k++) for (let j = pics.length - 1; j > k; j--) {
+    const a = pics[k].b, c2 = pics[j].b;
+    const ux0 = Math.min(a.x0, c2.x0), uy0 = Math.min(a.y0, c2.y0), ux1 = Math.max(a.x1, c2.x1), uy1 = Math.max(a.y1, c2.y1);
+    const area = b => (b.x1 - b.x0) * (b.y1 - b.y0);
+    if (a.x0 <= c2.x1 + 4 && c2.x0 <= a.x1 + 4 && a.y0 <= c2.y1 + 4 && c2.y0 <= a.y1 + 4 && (ux1 - ux0) * (uy1 - uy0) < (area(a) + area(c2)) * 1.6) { a.x0 = Math.min(a.x0, c2.x0); a.y0 = Math.min(a.y0, c2.y0); a.x1 = Math.max(a.x1, c2.x1); a.y1 = Math.max(a.y1, c2.y1); pics.splice(j, 1); j = pics.length; }
+  }
+  for (let k = S.length - 1; k >= 0; k--) { const g = S[k].b, cx = (g.x0 + g.x1) / 2, cy = (g.y0 + g.y1) / 2; if (pics.some(p => cx > p.b.x0 && cx < p.b.x1 && cy > p.b.y0 && cy < p.b.y1)) S.splice(k, 1); }
+  // 4b) titoli grandi che la prima lettura ha scambiato per disegni: li rileggo da soli
+  const worker = await getOCR();
+  for (const pic of pics.slice()) {
+    const b = pic.b, w = b.x1 - b.x0, h = b.y1 - b.y0;
+    if (w < h * 1.6 || h > H * .09) continue;
+    const vals = []; for (let y = b.y0; y < b.y1; y += 2) for (let x = b.x0; x < b.x1; x += 2) vals.push(G[y * W + x]);
+    vals.sort((p, q) => p - q); const loc = vals[Math.floor(vals.length * .8)] || bg;
+    if (vals.filter(v => v < loc - 60).length / vals.length > .55) continue; // pieno di colore: logo o timbro
+    try {
+      const { data } = await worker.recognize(c, { rectangle: { left: b.x0, top: b.y0, width: w, height: h } }, { blocks: true });
+      const ws = []; for (const bl of data.blocks || []) for (const pa of bl.paragraphs || []) for (const li of pa.lines || []) for (const wd of li.words || []) ws.push({ t: wd.text, c: wd.confidence, b: wd.bbox });
+      const good = ws.filter(x => x.t && x.t.trim()), txt = good.map(x => x.t).join(' ');
+      const conf = good.reduce((a, x) => a + x.c * x.t.length, 0) / Math.max(1, txt.replace(/ /g, '').length);
+      const letters = (txt.match(/[\p{L}\p{N}]/gu) || []).length;
+      if (!good.length || conf < 72 || letters < 2 || letters < txt.length * .6) continue;
+      const bb = { x0: Math.min(...good.map(x => x.b.x0)), y0: Math.min(...good.map(x => x.b.y0)), x1: Math.max(...good.map(x => x.b.x1)), y1: Math.max(...good.map(x => x.b.y1)) };
+      S.push({ text: txt, b: bb, em: 0, conf, words: good });
+      pics.splice(pics.indexOf(pic), 1);
+    } catch (e) { console.warn(e); }
+  }
+  // 2) stile di ogni segmento: grassetto (spessore del tratto), colore del testo, sfondo
+  for (const s of S) {
+    const { x0, y0, x1, y1 } = s.b; let runs = [], inkR = [], inkG = [], inkB = [];
+    const loc = []; for (let y = y0; y < y1; y += 2) for (let x = x0; x < x1; x += 3) loc.push(G[y * W + x]);
+    loc.sort((a, b) => a - b);
+    const dark = loc[Math.floor(loc.length * .05)] || 0, light = loc[Math.floor(loc.length * .8)] || bg, th = (dark + light) / 2;
+    s.light = light;
+    // altezza vera dei caratteri dal profilo verticale dell'inchiostro (più affidabile delle scatole)
+    const prof = [];
+    for (let y = y0; y < y1; y++) { let k = 0; for (let x = x0; x < x1; x += 2) if (G[y * W + x] < th) k++; prof.push(k); }
+    const pm = Math.max(...prof, 1), core = prof.filter(v => v > pm * .45).length;
+    const lt = (s.text.match(/[\p{L}\p{N}]/gu) || []).length || 1, tall = (s.text.match(/[A-ZÀ-Ý0-9bdfhklt]/g) || []).length;
+    const emP = core / (tall / lt > .5 ? .72 : .52);
+    const ests = [s.emBox, s.emRa, emP].filter(v => v > 4);
+    if (ests.length) s.em = ests.length === 3 ? med(ests) : ests.reduce((a, b) => a + b, 0) / ests.length;
+    for (let y = y0 + Math.floor((y1 - y0) * .25); y < y1 - (y1 - y0) * .25; y += 2) {
+      let run = 0, has = false;
+      for (let x = x0; x <= x1; x++) {
+        const p = y * W + x, cov = x < x1 ? Math.min(1, Math.max(0, (light - G[p]) / Math.max(20, light - dark))) : 0;
+        if (cov > .2) { run += cov; has = has || cov > .6; if (G[p] < dark + (th - dark) * .5) { inkR.push(img[p * 4]); inkG.push(img[p * 4 + 1]); inkB.push(img[p * 4 + 2]); } }
+        else if (run) { if (has && run < s.em * .3) runs.push(run); run = 0; has = false; }
+      }
+    }
+    s.runPx = med(runs);
+    s.color = [med(inkR), med(inkG), med(inkB)].map(v => Math.round(v));
+    // fondo dietro il testo (fasce grigie o colorate)
+    let br = [], bgc = [], bb = [];
+    for (let y = Math.max(0, y0 - 4); y < Math.min(H, y1 + 4); y += 2) for (let x = Math.max(0, x0 - 6); x < Math.min(W, x1 + 6); x += 3) { const p = y * W + x; if (G[p] > th) { br.push(img[p * 4]); bgc.push(img[p * 4 + 1]); bb.push(img[p * 4 + 2]); } }
+    s.back = [med(br), med(bgc), med(bb)].map(v => Math.round(v));
+  }
+  // dimensioni del carattere: in un documento sono poche, quindi avvicino ogni stima alla dimensione più comune vicina
+  const sizes = S.map(s => [s.em, s.text.length]).sort((a, b) => a[0] - b[0]), clusters = [];
+  for (const [e, n] of sizes) { const c = clusters[clusters.length - 1]; if (c && e < c.lo * 1.16) { c.sum += e * n; c.n += n; c.hi = e; } else clusters.push({ lo: e, hi: e, sum: e * n, n }); }
+  for (const c of clusters) c.em = c.sum / c.n;
+  const main = clusters.reduce((a, c) => (c.n > a.n ? c : a), clusters[0] || { em: 0, n: 0 });
+  for (const s of S) {
+    let best = null; for (const c of clusters) if (s.em >= c.lo * .999 && s.em <= c.hi * 1.001) best = c;
+    if (main.em && Math.abs(s.em - main.em) < main.em * .2) best = main;
+    if (best && best.n >= Math.max(8, s.text.length)) s.em = best.em;
+    s.stroke = s.runPx / s.em;
+  }
+  const strokes = S.map(s => s.stroke).filter(v => v > 0).sort((a, b) => a - b);
+  const baseStroke = strokes.length ? strokes[Math.floor(strokes.length * .3)] : .09;
+  const boldT = Math.max(.088, baseStroke * 1.2);
+  for (const s of S) { s.bold = s.stroke > boldT; s.sure = s.text.replace(/\s/g, '').length >= 5; }
+  return { W, H, bg, segs: S, bands, pics, rules, img, G, boldT };
+}
+// 5) righe, tabelle e paragrafi, nell'ordine di lettura
+function buildBlocks(m) {
+  const { W } = m, segs = m.segs.slice().sort((a, b) => a.b.y0 - b.b.y0);
+  const rows = [];
+  for (const s of segs) {
+    const cy = (s.b.y0 + s.b.y1) / 2;
+    let r = rows.find(r => cy > r.y0 - 2 && cy < r.y1 + 2 && Math.abs((r.y0 + r.y1) / 2 - cy) < Math.max(s.em, r.em) * .55);
+    if (r) { r.segs.push(s); r.y0 = Math.min(r.y0, s.b.y0); r.y1 = Math.max(r.y1, s.b.y1); r.em = Math.max(r.em, s.em); }
+    else rows.push({ segs: [s], y0: s.b.y0, y1: s.b.y1, em: s.em });
+  }
+  rows.forEach(r => {
+    r.segs.sort((a, b) => a.b.x0 - b.b.x0);
+    // pezzi corti (numeri, sigle): grassetto e dimensione presi dal resto della riga
+    const sure = r.segs.filter(g => g.sure), ref = sure.length ? sure : r.segs;
+    const boldRow = ref.reduce((a, g) => a + g.stroke * g.text.length, 0) / Math.max(1, ref.reduce((a, g) => a + g.text.length, 0)) > m.boldT;
+    const emRow = med2(ref.map(g => g.em));
+    for (const g of r.segs) { if (!g.sure) g.bold = boldRow; if (Math.abs(g.em - emRow) < emRow * .25) g.em = emRow; }
+    r.bold = boldRow; r.emRow = emRow;
+  });
+  rows.sort((a, b) => a.y0 - b.y0);
+  const minX = Math.min(...segs.map(s => s.b.x0)), maxX = Math.max(...segs.map(s => s.b.x1));
+  // tabelle: almeno due righe consecutive con colonne allineate
+  const blocks = [];
+  let i = 0;
+  while (i < rows.length) {
+    const r = rows[i];
+    if (r.segs.length >= 2) {
+      let j = i + 1, cols = r.segs.map(s => [s.b.x0, s.b.x1]);
+      const tol = r.em * 1.2;
+      const fits = rr => {
+        if (rr.segs.length < 2 || rr.y0 - rows[j - 1].y1 > rr.em * 2.6) return false;
+        let ok = 0; for (const s of rr.segs) if (cols.some(([a, b]) => Math.abs(s.b.x0 - a) < tol || Math.abs(s.b.x1 - b) < tol)) ok++;
+        return ok >= Math.max(2, rr.segs.length - 1);
+      };
+      while (j < rows.length && fits(rows[j])) { for (const s of rows[j].segs) if (!cols.some(([a, b]) => Math.abs(s.b.x0 - a) < tol || Math.abs(s.b.x1 - b) < tol)) cols.push([s.b.x0, s.b.x1]); j++; }
+      if (j - i >= 2) {
+        // colonne ordinate e unite se si sovrappongono
+        cols.sort((a, b) => a[0] - b[0]); const cc = [];
+        for (const c of cols) { const l = cc[cc.length - 1]; if (l && c[0] < l[1] - tol * .3) { l[0] = Math.min(l[0], c[0]); l[1] = Math.max(l[1], c[1]); } else cc.push(c.slice()); }
+        blocks.push({ type: 'table', rows: rows.slice(i, j), cols: cc, y0: r.y0, y1: rows[j - 1].y1 });
+        i = j; continue;
+      }
+      blocks.push({ type: 'tabs', row: r, y0: r.y0, y1: r.y1 });
+      i++; continue;
+    }
+    // paragrafo: righe consecutive con stesso stile e margine
+    const s = r.segs[0], para = { type: 'p', lines: [s], y0: r.y0, y1: r.y1 };
+    let j = i + 1;
+    while (j < rows.length && rows[j].segs.length === 1) {
+      const t = rows[j].segs[0], last = para.lines[para.lines.length - 1];
+      const gap = t.b.y0 - last.b.y1, sameSize = Math.abs(t.em - s.em) < s.em * .14, sameBold = t.bold === s.bold || Math.abs(t.stroke - s.stroke) < Math.max(t.stroke, s.stroke) * .3;
+      const sameBack = Math.abs(t.light - s.light) < 18;
+      const aligned = Math.abs(t.b.x0 - s.b.x0) < s.em * 1.6 || Math.abs((t.b.x0 + t.b.x1) / 2 - (s.b.x0 + s.b.x1) / 2) < s.em;
+      if (gap > s.em * .62 || gap < -s.em * .3 || !sameSize || !sameBold || !sameBack || !aligned) break;
+      para.lines.push(t); para.y1 = rows[j].y1; j++;
+    }
+    blocks.push(para); i = j;
+  }
+  // allineamento e a capo dei paragrafi
+  const cx = (minX + maxX) / 2;
+  for (const p of blocks) {
+    if (p.type !== 'p') continue;
+    const L = p.lines, rights = L.map(l => l.b.x1), lefts = L.map(l => l.b.x0), widest = Math.max(...rights) - Math.min(...lefts);
+    const em = med2(L.map(l => l.em));
+    p.em = em; p.bold = L.reduce((a, l) => a + l.stroke * l.text.length, 0) / Math.max(1, L.reduce((a, l) => a + l.text.length, 0)) > m.boldT; p.x0 = Math.min(...lefts); p.x1 = Math.max(...rights);
+    p.color = L[0].color;
+    const centered = L.every(l => Math.abs((l.b.x0 + l.b.x1) / 2 - cx) < Math.max(em * 1.2, W * .015)) && p.x0 > minX + em * 2;
+    const right = !centered && L.every(l => Math.abs(l.b.x1 - maxX) < em * 1.2) && p.x0 > minX + W * .2;
+    p.align = centered ? 'center' : right ? 'right' : 'left';
+    // a capo veri vs testo che va a capo da solo
+    // si unisce solo il testo che va davvero a capo da solo: righe lunghe, che arrivano al margine destro
+    const wide = (maxX - minX) * .6;
+    p.join = L.map((l, k) => k < L.length - 1 && l.b.x1 > p.x1 - em * 3.5 && (l.b.x1 - l.b.x0) > wide && Math.abs(L[k + 1].b.x0 - p.x0) < em * 1.6);
+    p.justify = p.align === 'left' && L.length >= 3 && L.slice(0, -1).filter((l, k) => p.join[k]).length >= 2 && L.slice(0, -1).every(l => !p.join || Math.abs(l.b.x1 - p.x1) < em * .8);
+    p.pitch = L.length > 1 ? (L[L.length - 1].b.y0 - L[0].b.y0) / (L.length - 1) : 0;
+  }
+  return { blocks, minX, maxX };
+}
+function med2(a) { const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1] || 0; }
+
+// lettura completa di una pagina: impaginazione + ritagli delle immagini, poi libera la memoria
+async function readLayout(blob) {
+  const o = await ocrPage(blob);
+  try {
+    const m = await analyzePage(o), L = buildBlocks(m);
+    for (const p of m.pics) {
+      const pad = 3, x0 = Math.max(0, p.b.x0 - pad), y0 = Math.max(0, p.b.y0 - pad), w = Math.min(m.W, p.b.x1 + pad) - x0, h = Math.min(m.H, p.b.y1 + pad) - y0;
+      const cc = mk(w, h); ctx2d(cc).drawImage(o.c, x0, y0, w, h, 0, 0, w, h);
+      p.blob = await toBlob(cc, 'image/jpeg', .9); p.cb = { x0, y0, w, h }; free(cc);
+    }
+    m.words = []; for (const li of o.lines) for (const w of li.words) if (w.t && w.t.trim() && w.c > 30) m.words.push(w);
+    m.text = o.text; m.img = m.G = null;
+    return { m, L };
+  } finally { free(o.c); }
+}
+
+// Word impaginato: ogni pagina scansionata diventa una pagina Word con testo, tabelle e immagini al loro posto
+async function layoutDocx(pages) {
+  const Z = await getZip(), z = new Z(), media = [];
+  let drawId = 1;
+  const X = t => xmlEsc(String(t));
+  const hex = c => c.map(v => Math.max(0, Math.min(255, v | 0)).toString(16).padStart(2, '0')).join('').toUpperCase();
+  const colorOf = c => { const L = c[0] * .3 + c[1] * .59 + c[2] * .11, ch = Math.max(...c) - Math.min(...c); return ch > 45 ? hex(c) : L > 115 ? hex(c.map(() => Math.round(L))) : null; };
+  const addMedia = async (blob, ext) => { const n = media.length + 1, name = `img${n}.${ext}`; media.push({ name, blob, id: 'rIdM' + n, ext }); return 'rIdM' + n; };
+  const anchor = (rid, xE, yE, cx, cy, behind) => {
+    const id = drawId++;
+    return `<w:r><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${behind ? 1 + id : 1000 + id}" behindDoc="${behind ? 1 : 0}" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="page"><wp:posOffset>${xE}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="page"><wp:posOffset>${yE}</wp:posOffset></wp:positionV><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="${id}" name="Immagine ${id}"/><wp:cNvGraphicFramePr/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="img${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>`;
+  };
+  const solid = async col => { const c = mk(4, 4), x = ctx2d(c); x.fillStyle = `rgb(${col.join(',')})`; x.fillRect(0, 0, 4, 4); const b = await toBlob(c, 'image/png'); free(c); return b; };
+  let body = '', sect = null;
+  for (let pi = 0; pi < pages.length; pi++) {
+    const { m, L } = pages[pi], { W, H } = m;
+    const land = W > H, PW = land ? 16838 : 11906, PH = land ? 11906 : 16838;
+    const s = Math.min(PW / W, PH / H), offX = (PW - W * s) / 2, offY = 0; // twip per pixel
+    const E = v => Math.round(v * 635); // twip → EMU
+    const minX = isFinite(L.minX) ? L.minX : W * .08, maxX = isFinite(L.maxX) ? L.maxX : W * .92;
+    const left = Math.max(240, Math.round(offX + minX * s - 20)), right = Math.max(240, Math.round(PW - (offX + maxX * s) - 20));
+    const firstY = L.blocks.length ? L.blocks[0].y0 : H * .1;
+    const top = Math.max(200, Math.round(offY + firstY * s - 300));
+    sect = { PW, PH, left, right, top, land };
+    const twX = x => Math.round(offX + x * s) - left; // posizione orizzontale rispetto al margine
+    const pt2 = em => Math.max(10, Math.min(144, Math.round(em * s / 20 * 2 * .98))); // mezzi punti
+    // immagini e fasce, ancorate alla pagina nella loro posizione esatta
+    let anchors = '';
+    for (const b of m.bands) anchors += anchor(await addMedia(await solid(b.color), 'png'), E(offX + b.b.x0 * s), E(offY + b.b.y0 * s), E((b.b.x1 - b.b.x0) * s), E((b.b.y1 - b.b.y0) * s), true);
+    for (const r of m.rules) anchors += anchor(await addMedia(await solid([40, 40, 40]), 'png'), E(offX + r.b.x0 * s), E(offY + (r.b.y0 + r.b.y1) / 2 * s), E((r.b.x1 - r.b.x0) * s), Math.max(9525, E(Math.min(3, r.b.y1 - r.b.y0) * s)), false);
+    for (const p of m.pics) anchors += anchor(await addMedia(p.blob, 'jpeg'), E(offX + p.cb.x0 * s), E(offY + p.cb.y0 * s), E(p.cb.w * s), E(p.cb.h * s), false);
+    // larghezza: il testo in Arial viene stretto o allargato quanto serve per occupare lo stesso spazio dell'originale
+    const mctx = (layoutDocx.mc = layoutDocx.mc || ctx2d(mk(8, 8)));
+    const emWord = em => pt2(em) / 2 * 20 / s; // dimensione reale in pixel della scansione
+    const scaleFor = (t, em, bold, wPx) => { mctx.font = `${bold ? 'bold ' : ''}100px Arial, "Liberation Sans", Helvetica, sans-serif`; const mw = mctx.measureText(t).width * emWord(em) / 100; return mw > 0 ? Math.max(60, Math.min(135, Math.round(wPx / mw * 100))) : 100; };
+    const rPr = (em, bold, col, w) => `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${bold ? '<w:b/>' : ''}${col ? `<w:color w:val="${col}"/>` : ''}${w && Math.abs(w - 100) > 2 ? `<w:w w:val="${w}"/>` : ''}<w:sz w:val="${pt2(em)}"/><w:szCs w:val="${pt2(em)}"/></w:rPr>`;
+    const run = (t, em, bold, col, w) => `<w:r>${rPr(em, bold, col, w)}<w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+    const genPage = kB => {
+    let cursor = top / s - offY / s, sumB = 0; // in pixel della scansione: dove finisce il contenuto precedente
+    const out = [];
+    const lineBox = (y0, em, Lpx) => y0 - Math.max(0, Lpx - .93 * em);
+    const spacer = gapPx => gapPx * s > 20 ? `<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(gapPx * s)}" w:lineRule="exact"/><w:rPr><w:sz w:val="2"/></w:rPr></w:pPr></w:p>` : '';
+    for (const bl of L.blocks) {
+      if (bl.type === 'p') {
+        let em = bl.em; const Lpx = bl.lines.length > 1 ? Math.max(bl.pitch, em * 1.02) : em * 1.18;
+        const boxTop = lineBox(bl.y0, em, Lpx), before = Math.max(0, boxTop - cursor); sumB += before;
+        let runs = '';
+        let pw = Math.round(med2(bl.lines.filter(l => l.text.length > 8).map(l => scaleFor(l.text, em, bl.bold, l.b.x1 - l.b.x0)).concat(bl.lines.length === 1 || bl.lines.every(l => l.text.length <= 8) ? [scaleFor(bl.lines[0].text, em, bl.bold, bl.lines[0].b.x1 - bl.lines[0].b.x0)] : [])) * .985);
+        // se il testo risulta molto stretto o largo, la dimensione stimata era sbagliata: la correggo con la larghezza (più affidabile)
+        if (pw < 90 || pw > 112) { em = em * Math.pow(Math.max(.7, Math.min(1.3, pw / 100)), .8); pw = Math.round(med2(bl.lines.map(l => scaleFor(l.text, em, bl.bold, l.b.x1 - l.b.x0))) * .985); }
+        bl.lines.forEach((l, k) => {
+          let t = l.text;
+          if (k > 0) {
+            const prev = bl.lines[k - 1].text;
+            if (bl.join[k - 1]) { if (/[A-Za-zÀ-ÿ]-$/.test(prev) && /^[a-zà-ÿ]/.test(t)) runs = runs.replace(/-(<\/w:t><\/w:r>)$/, '$1'); else t = ' ' + t; }
+            else runs += '<w:r><w:br/></w:r>';
+          }
+          runs += run(t, em, bl.bold, colorOf(l.color), pw);
+        });
+        const ind = `<w:ind w:left="${Math.max(0, twX(bl.x0))}" w:right="${bl.align === 'left' && bl.lines.length > 1 ? Math.max(0, Math.round((maxX - bl.x1) * s) - 60) : 0}"/>`;
+        const jc = bl.align === 'center' ? 'center' : bl.align === 'right' ? 'right' : bl.justify ? 'both' : 'left';
+        out.push(`<w:p><w:pPr><w:spacing w:before="${Math.round(before * s * kB)}" w:after="0" w:line="${Math.round(Lpx * s)}" w:lineRule="exact"/>${bl.align === 'left' ? ind : ''}<w:jc w:val="${jc}"/></w:pPr>${runs}</w:p>`);
+        cursor = boxTop + Lpx * bl.lines.length;
+      } else if (bl.type === 'tabs') {
+        const segs = bl.row.segs, em = Math.max(...segs.map(x => x.em)), Lpx = em * 1.18;
+        const boxTop = lineBox(bl.y0, em, Lpx), before = Math.max(0, boxTop - cursor); sumB += before;
+        let tabs = '', runs = '';
+        segs.forEach((g, k) => {
+          if (k) {
+            const rightAl = Math.abs(g.b.x1 - maxX) < g.em * 1.2;
+            tabs += rightAl ? `<w:tab w:val="right" w:pos="${twX(g.b.x1)}"/>` : `<w:tab w:val="left" w:pos="${twX(g.b.x0)}"/>`;
+            runs += '<w:r><w:tab/></w:r>';
+          }
+          runs += run(g.text, g.em, g.bold, colorOf(g.color), Math.min(100, scaleFor(g.text, g.em, g.bold, g.b.x1 - g.b.x0)));
+        });
+        out.push(`<w:p><w:pPr><w:tabs>${tabs}</w:tabs><w:spacing w:before="${Math.round(before * s * kB)}" w:after="0" w:line="${Math.round(Lpx * s)}" w:lineRule="exact"/><w:ind w:left="${Math.max(0, twX(segs[0].b.x0))}"/></w:pPr>${runs}</w:p>`);
+        cursor = boxTop + Lpx;
+      } else if (bl.type === 'table') {
+        const cols = bl.cols, rows = bl.rows, n = cols.length;
+        // colonne allineate a destra (numeri) o a sinistra
+        const colSegs = cols.map(() => []);
+        const pick = g => { let bi = 0, bd = 1e9; cols.forEach(([a, b], j) => { const d = Math.min(Math.abs(g.b.x0 - a), Math.abs(g.b.x1 - b), g.b.x0 >= a && g.b.x1 <= b ? 0 : 1e9); if (d < bd) { bd = d; bi = j; } }); return bi; };
+        rows.forEach(r => r.segs.forEach(g => { g._col = pick(g); colSegs[g._col].push(g); }));
+        const rightA = colSegs.map(a => { if (a.length < 2) return false; const v0 = Math.max(...a.map(g => g.b.x0)) - Math.min(...a.map(g => g.b.x0)), v1 = Math.max(...a.map(g => g.b.x1)) - Math.min(...a.map(g => g.b.x1)); return v1 < v0 * .5 && v0 > 6; });
+        const bounds = [];
+        for (let j = 0; j < n; j++) {
+          if (j === 0) bounds.push(Math.min(...colSegs[0].map(g => g.b.x0).concat([cols[0][0]])));
+          else if (rightA[j]) bounds.push((Math.max(...colSegs[j - 1].map(g => g.b.x1).concat([cols[j - 1][1]])) + Math.min(...colSegs[j].map(g => g.b.x0).concat([cols[j][0]]))) / 2);
+          else bounds.push(Math.min(...colSegs[j].map(g => g.b.x0).concat([cols[j][0]])));
+        }
+        bounds.push(Math.max(maxX, ...colSegs[n - 1].map(g => g.b.x1)) + 4);
+        const widths = bounds.slice(1).map((b, j) => Math.max(200, Math.round((b - bounds[j]) * s)));
+        const em0 = med2(rows.flatMap(r => r.segs.map(g => g.em)));
+        const firstBox = lineBox(bl.y0, em0, em0 * 1.18);
+        out.push(spacer((firstBox - cursor) * kB)); sumB += Math.max(0, firstBox - cursor);
+        let trs = '';
+        rows.forEach((r, k) => {
+          const hpx = k < rows.length - 1 ? rows[k + 1].y0 - r.y0 : em0 * 1.3;
+          let tcs = '';
+          for (let j = 0; j < n; j++) {
+            const gs = r.segs.filter(g => g._col === j), emR = Math.abs(r.emRow - em0) < em0 * .2 ? em0 : r.emRow;
+            const content = gs.map(g => run(g.text, emR, r.bold, colorOf(g.color), Math.min(100, scaleFor(g.text, emR, r.bold, g.b.x1 - g.b.x0)))).join('<w:r><w:t xml:space="preserve"> </w:t></w:r>');
+            tcs += `<w:tc><w:tcPr><w:tcW w:w="${widths[j]}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(Math.min(hpx, emR * 1.3) * s)}" w:lineRule="exact"/>${rightA[j] ? '<w:jc w:val="right"/>' : ''}</w:pPr>${content}</w:p></w:tc>`;
+          }
+          trs += `<w:tr><w:trPr><w:trHeight w:val="${Math.round(hpx * s)}" w:hRule="exact"/></w:trPr>${tcs}</w:tr>`;
+        });
+        const none = '<w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/><w:insideH w:val="nil"/><w:insideV w:val="nil"/>';
+        out.push(`<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a, b) => a + b, 0)}" w:type="dxa"/><w:tblInd w:w="${Math.max(0, twX(bounds[0]))}" w:type="dxa"/><w:tblBorders>${none}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${widths.map(w => `<w:gridCol w:w="${w}"/>`).join('')}</w:tblGrid>${trs}</w:tbl>`);
+        cursor = firstBox + rows.reduce((a, r, k) => a + (k < rows.length - 1 ? rows[k + 1].y0 - r.y0 : em0 * 1.3), 0);
+      }
+    }
+    return { out, cursor, sumB };
+    };
+    // se il contenuto rischia di uscire dalla pagina, stringo gli spazi verticali
+    let g1 = genPage(1);
+    const limit = (PH - 260) / s - offY / s;
+    if (g1.cursor > limit && g1.sumB > 0) g1 = genPage(Math.max(.2, 1 - (g1.cursor - limit) / g1.sumB));
+    const out = g1.out;
+    for (let k = out.length - 1; k >= 0; k--) if (!out[k]) out.splice(k, 1);
+    if (!out.length) out.push('<w:p/>');
+    // le immagini si agganciano al primo paragrafo della pagina
+    const firstP = out.findIndex(x => x.startsWith('<w:p>') || x.startsWith('<w:p '));
+    if (firstP >= 0) out[firstP] = out[firstP].replace(/(<\/w:pPr>|<w:p\/>)/, m0 => m0 === '<w:p/>' ? `<w:p>${anchors}</w:p>` : m0 + anchors);
+    else out.unshift(`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr>${anchors}</w:p>`);
+    if (out[out.length - 1].startsWith('<w:tbl')) out.push('<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>');
+    const secPr = `<w:sectPr><w:pgSz w:w="${PW}" w:h="${PH}"${land ? ' w:orient="landscape"' : ''}/><w:pgMar w:top="${top}" w:right="${right}" w:bottom="200" w:left="${left}" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr>`;
+    // ogni pagina è una sezione: la prossima ricomincia su una pagina nuova
+    if (pi < pages.length - 1) { const last = out.length - 1; out[last] = out[last].startsWith('<w:p>') && out[last].includes('<w:pPr>') ? out[last].replace('</w:pPr>', secPr + '</w:pPr>') : out[last] + `<w:p><w:pPr>${secPr}</w:pPr></w:p>`; }
+    else sect.xml = secPr;
+    body += out.join('');
+  }
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${body}${sect.xml}</w:body></w:document>`;
+  z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+  z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  z.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${media.map(mm => `<Relationship Id="${mm.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${mm.name}"/>`).join('')}</Relationships>`);
+  z.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="it-IT"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>');
+  z.file('word/document.xml', doc);
+  for (const mm of media) z.file('word/media/' + mm.name, mm.blob);
+  return z.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
+}
+
+
 const PPTX_SRC = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
 $('#exPptx').onclick = () => exRun('PowerPoint', async (list, base) => {
   busy('Creo il PowerPoint…'); await raf();
