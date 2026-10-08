@@ -161,6 +161,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .loupe canvas{width:100%;height:100%;display:block}
 .ed-tools{padding:8px 14px calc(var(--sb) + 16px);display:flex;flex-direction:column;gap:12px;position:relative;z-index:3;flex:0 0 auto}
 .tool-row{display:flex;justify-content:center;gap:12px}
+.tool-row .tool{padding:11px 12px;white-space:nowrap}.tool-row{gap:8px}.tool.more{background:linear-gradient(135deg,rgba(142,166,255,.38),rgba(94,232,207,.26))}
 .tool{display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .15s}
 .tool:active{transform:scale(.94)}
 .hint{text-align:center;color:var(--muted);font-size:12.5px}
@@ -194,6 +195,25 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .fmt .ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:rgba(142,166,255,.2);margin-bottom:3px}
 .fmt b{font-size:13px;font-weight:620}.fmt small{font-size:10.5px;color:var(--muted);line-height:1.2}
 .fmt[hidden],#scopeSeg[hidden]{display:none}
+.id-chip{display:flex;align-items:center;gap:10px;width:100%;max-width:360px;padding:12px 16px;border-radius:20px;text-align:left;font-weight:620;font-size:15px;transition:transform .15s}
+.id-chip:active{transform:scale(.97)}
+.id-chip small{margin-left:auto;color:var(--muted);font-size:12px;font-weight:500}
+.id-title{font-size:16px;font-weight:650}
+.id-stage{flex-direction:column}
+.id-frame{position:relative;box-shadow:0 10px 40px rgba(0,0,0,.5);border-radius:4px;overflow:hidden}
+.id-frame canvas{display:block}
+#idGuide{position:absolute;inset:0;pointer-events:none}
+#idGuide .gl{stroke:#5ee8cf;stroke-width:1.2;stroke-dasharray:5 4;opacity:.9}
+#idGuide .go{fill:none;stroke:rgba(94,232,207,.55);stroke-width:1.2;stroke-dasharray:3 4}
+.id-wait{position:absolute;inset:0;display:grid;place-items:center;padding:30px;text-align:center;color:var(--text);font-weight:600;background:rgba(5,7,13,.6);z-index:2}
+#idSize button{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:6px 6px}
+#idSize small{font-size:10px;font-weight:500;opacity:.8;white-space:nowrap}
+.id-bg{display:flex;align-items:center;justify-content:center;gap:12px}
+.id-bg span{color:var(--muted);font-size:13px;font-weight:600;margin-right:2px}
+.id-bg button{width:34px;height:34px;border-radius:50%;background:var(--c);border:2px solid rgba(255,255,255,.25);transition:transform .15s}
+.id-bg button.on{border-color:#5ee8cf;transform:scale(1.12);box-shadow:0 0 0 3px rgba(94,232,207,.25)}
+.id-bg button.orig{width:auto;padding:0 10px;border-radius:17px;background:rgba(255,255,255,.08);font-size:12px;font-weight:600;color:var(--text)}
+.id-row{display:flex;gap:10px;justify-content:center}.id-row .pill{flex:1;max-width:200px}
 .tgl{width:100%;display:flex;align-items:center;gap:12px;margin-top:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);text-align:left;font-size:14px;font-weight:560}
 .tgl small{display:block;color:var(--muted);font-size:11.5px;font-weight:450;margin-top:1px}
 .tgl .sw{flex:0 0 auto;width:42px;height:25px;border-radius:13px;background:rgba(255,255,255,.18);position:relative;transition:background .2s}
@@ -250,6 +270,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <h1 id="heroTitle">Allegare foto tette qui</h1>
       <p id="heroText">Inquadra il documento e scatta. Bordi, prospettiva e nome li sistemo io.</p>
     </div>
+    <button id="idBtn" class="id-chip glass"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><circle cx="12" cy="10" r="3.2"/><path d="M6.8 20.5c.8-3 2.8-4.6 5.2-4.6s4.4 1.6 5.2 4.6"/></svg><span>Fototessera</span><small>35×45 · sfondo bianco</small></button>
     <section id="recents" class="recents hidden">
       <div class="rec-head"><span>Recenti</span><button id="recAll">Vedi tutti</button></div>
       <div id="recList" class="rec-list"></div>
@@ -317,6 +338,34 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
   </nav>
 </div>
 
+<!-- FOTOTESSERA -->
+<div id="idphoto" class="screen editor hidden">
+  <header class="ed-top">
+    <button id="idCancel" class="pill">Annulla</button>
+    <strong class="id-title">Fototessera</strong>
+    <button id="idSave" class="pill accent">Salva</button>
+  </header>
+  <div id="idStage" class="stage id-stage">
+    <div class="id-frame"><canvas id="idCanvas"></canvas><svg id="idGuide"></svg></div>
+    <div id="idWait" class="id-wait hidden"></div>
+  </div>
+  <div class="ed-tools">
+    <div class="seg glass" id="idSize">
+      <button data-s="it" class="on">35×45<small>Carta d'identità · passaporto</small></button>
+      <button data-s="us">51×51<small>USA</small></button>
+      <button data-s="sm">30×40<small>Tessere</small></button>
+    </div>
+    <div class="id-bg" id="idBg"><span>Sfondo</span>
+      <button data-bg="white" class="on" style="--c:#fff" aria-label="Bianco"></button>
+      <button data-bg="grey" style="--c:#eceef1" aria-label="Grigio chiaro"></button>
+      <button data-bg="blue" style="--c:#d6e6f6" aria-label="Azzurro"></button>
+      <button data-bg="orig" class="orig" aria-label="Originale">Orig.</button>
+    </div>
+    <div class="id-row"><button id="idRetake" class="pill">Altra foto</button><button id="idShare" class="pill">Condividi o stampa</button></div>
+    <p class="hint">Trascina la foto o allargala con due dita · la testa va tra le due linee</p>
+  </div>
+</div>
+
 <!-- EDITOR -->
 <div id="editor" class="screen editor hidden">
   <header class="ed-top">
@@ -345,9 +394,21 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <div class="tool-row" style="margin-top:12px">
         <button id="rotL" class="tool glass" aria-label="Ruota a sinistra"><svg class="i" viewBox="0 0 24 24"><path d="M4 4v5h5"/><path d="M4.6 9A8 8 0 1112 20"/></svg></button>
         <button id="rotR" class="tool glass" aria-label="Ruota a destra"><svg class="i" viewBox="0 0 24 24"><path d="M20 4v5h-5"/><path d="M19.4 9A8 8 0 1012 20"/></svg></button>
+        <button id="edMore" class="tool glass more"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3.5" width="12" height="15" rx="2"/><path d="M8 21h10a2 2 0 002-2V8"/><path d="M10 8v6M7 11h6"/></svg><span>Altra pagina</span></button>
         <button id="edShare" class="tool glass"><svg class="i" viewBox="0 0 24 24"><path d="M12 15V3.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5V18a2.5 2.5 0 002.5 2.5h9A2.5 2.5 0 0019 18v-5.5"/></svg><span>Condividi</span></button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- FOTOTESSERA: CONDIVIDI -->
+<div id="idSheet" class="overlay sheet-wrap hidden">
+  <div class="sheet glass">
+    <div class="grab"></div>
+    <h3>Fototessera</h3>
+    <button class="row-btn" id="idOne"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="3"/><circle cx="12" cy="10" r="3.2"/><path d="M6.8 20.5c.8-3 2.8-4.6 5.2-4.6s4.4 1.6 5.2 4.6"/></svg></span><span>Foto singola<small>Per moduli online, email, app (JPG ad alta risoluzione)</small></span></button>
+    <button class="row-btn" id="idPrint"><span class="ic"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 8.5h3v4h-3zM13.5 8.5h3v4h-3z"/></svg></span><span>Foglio 10×15 da stampare<small>Più copie su una foto standard: la stampi in qualsiasi negozio</small></span></button>
+    <button class="row-btn" id="idPdf"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M14 3.5H7A2.5 2.5 0 004.5 6v12A2.5 2.5 0 007 20.5h10a2.5 2.5 0 002.5-2.5V9L14 3.5z"/><path d="M14 3.5V9h5.5"/></svg></span><span>PDF A4 da stampare a casa<small>Tante copie con le linee per ritagliarle</small></span></button>
   </div>
 </div>
 
@@ -365,8 +426,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
       <span>PDF<small>Il più usato · WhatsApp, Mail, File…</small></span>
     </button>
     <div class="seg glass mini" id="sizeSeg">
-      <button data-size="a4" class="on">PDF in pagine A4</button>
-      <button data-size="fit">PDF grande come la foto</button>
+      <button data-size="a4" class="on">Su foglio A4</button>
+      <button data-size="fit">Senza bordi bianchi</button>
     </div>
     <button class="tgl" id="pdfTextBtn" aria-pressed="false"><span class="sw"></span><span>Testo selezionabile nel PDF<small>Puoi cercare e copiare il testo · qualche secondo in più</small></span></button>
     <div class="sheet-lbl">Altri formati</div>
@@ -407,13 +468,14 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 <div id="toast" class="toast"></div>
 <input id="camInput" type="file" accept="image/*" capture="environment" hidden>
 <input id="fileInput" type="file" accept="image/*,application/pdf,.pdf" multiple hidden>
+<input id="idInput" type="file" accept="image/*" hidden>
 
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '14';
+const APP_VERSION = '15';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -1411,7 +1473,8 @@ async function importPdf(file, idx, total, intoDocId) {
 
 async function openFiles(files) {
   if (!files.length) return;
-  const docId = target, from = returnTo;
+  let docId = target; const from = returnTo;
+  if (docId && docId.then) docId = await docId; // pagina precedente ancora in salvataggio
   const pdfs = files.filter(isPdf);
   if (pdfs.length) {
     let nd = 0, np = 0;
@@ -1498,6 +1561,7 @@ function closeEditor() {
 async function setTab(t) {
   ED.tab = t;
   $('#edSave').textContent = t === 'crop' ? 'Avanti' : 'Salva';
+  $('#edMore').classList.toggle('hidden', !!ED.page);
   document.querySelectorAll('#tabSeg button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
   const crop = t === 'crop';
   $('#cropBox').classList.toggle('hidden', !crop);
@@ -1634,26 +1698,42 @@ function buildChips() {
 $('#rotL').onclick = () => { ED.rot = (ED.rot + 3) % 4; buildChips(); renderPreview(); };
 $('#rotR').onclick = () => { ED.rot = (ED.rot + 1) % 4; buildChips(); renderPreview(); };
 $('#edCancel').onclick = () => closeEditor();
+// salva la pagina aperta nell'editor (nuova o ritoccata)
+async function edCommit(quiet) {
+  const wasNew = !ED.page, from = ED.from;
+  const firstBefore = ED.page ? docPages(ED.page.docId)[0] : null;
+  const p = await savePage(ED.src, ED.corners, ED.rot, ED.filter, ED.page, ED.docId);
+  lastFilter = ED.filter; safe(store.set('filter', lastFilter));
+  const doc = getDoc(p.docId);
+  if (!wasNew && firstBefore === p && doc) doc.autoFrom = null; // prima pagina ritoccata: rileggila
+  closeEditor();
+  if (from === 'viewer') renderViewer(true);
+  renderAll();
+  const n = docPages(p.docId).length;
+  if (!quiet) toast(wasNew ? (n > 1 ? `Salvato in Archivio · ${n} pagine` : from === 'doc' ? 'Pagina aggiunta' : 'Salvato in Archivio') : 'Pagina aggiornata');
+  autoNameMaybe(doc);
+  return p;
+}
 $('#edSave').onclick = async () => {
   if (!ED.src) { closeEditor(); return; }
   if (ED.tab === 'crop') { setTab('filter'); return; } // prima mostra come verrà, poi si salva
   busy('Elaborazione…'); await raf();
-  const wasNew = !ED.page, from = ED.from;
-  try {
-    const firstBefore = ED.page ? docPages(ED.page.docId)[0] : null;
-    const p = await savePage(ED.src, ED.corners, ED.rot, ED.filter, ED.page, ED.docId);
-    lastFilter = ED.filter; safe(store.set('filter', lastFilter));
-    const doc = getDoc(p.docId);
-    if (!wasNew && firstBefore === p && doc) doc.autoFrom = null; // prima pagina ritoccata: rileggila
-    closeEditor();
-    if (from === 'viewer') renderViewer(true);
-    renderAll();
-    toast(wasNew ? (from === 'doc' ? 'Pagina aggiunta' : 'Salvato in Archivio') : 'Pagina aggiornata');
-    autoNameMaybe(doc);
-  } catch (e) { toast('Errore: ' + e.message); }
+  try { await edCommit(); } catch (e) { toast('Errore: ' + e.message); }
   finally { busy(false); }
 };
-
+// "Altra pagina": salva questa e apre subito la fotocamera per la prossima, nello stesso documento
+$('#edMore').onclick = () => {
+  if (!ED.src) return;
+  const from = ED.from;
+  const saving = (async () => {
+    busy('Salvo la pagina…'); await raf();
+    try { const p = await edCommit(true); toast(`Pagina ${docPages(p.docId).length} salvata · scatta la prossima`); return p.docId; }
+    catch (e) { toast('Errore: ' + e.message); return null; }
+    finally { busy(false); }
+  })();
+  target = saving; returnTo = from === 'viewer' ? 'doc' : from;
+  $('#camInput').click(); // subito, finché vale il tocco: il salvataggio continua intanto
+};
 // Condividi subito (PDF o altri formati), senza salvare la pagina in archivio
 $('#edShare').onclick = async () => {
   if (!ED.src) return;
@@ -2288,6 +2368,254 @@ $('#exPptx').onclick = () => exRun('PowerPoint', async (list, base) => {
   await deliver([new File([blob], base + '.pptx', { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' })], 'PowerPoint', true);
 });
 
+/* ---------------- fototessera ---------------- */
+// Riconoscimento del viso e dello sfondo direttamente sul telefono (MediaPipe), nessun invio a server
+const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const MP_FACE = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
+const MP_SEG = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite';
+let visionP = null;
+function getVision() {
+  if (!visionP) visionP = (async () => {
+    const m = await import(MP_BASE + '/vision_bundle.mjs');
+    const fs = await m.FilesetResolver.forVisionTasks(MP_BASE + '/wasm');
+    const face = await m.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: MP_FACE, delegate: 'CPU' }, runningMode: 'IMAGE', minDetectionConfidence: .45 });
+    const seg = await m.ImageSegmenter.createFromOptions(fs, { baseOptions: { modelAssetPath: MP_SEG, delegate: 'CPU' }, runningMode: 'IMAGE', outputCategoryMask: false, outputConfidenceMasks: true });
+    return { face, seg };
+  })().catch(e => { visionP = null; throw e; });
+  return visionP;
+}
+// formati: millimetri e posizione della testa (sommità e mento, in mm dall'alto)
+const ID_SIZES = {
+  it: { mm: [35, 45], crown: 5, chin: 39 },   // carta d'identità, passaporto, patente (Italia / UE)
+  us: { mm: [51, 51], crown: 7, chin: 38 },   // visto e passaporto USA (2×2 pollici)
+  sm: { mm: [30, 40], crown: 4, chin: 33 }    // tessere, abbonamenti, badge
+};
+const ID_BG = { orig: null, white: [255, 255, 255], grey: [236, 238, 241], blue: [214, 230, 246] };
+const ID = { work: null, fg: null, face: null, size: 'it', bg: 'white', k: 1, cx: 0, cy: 0, ang: 0, edge: '#888' };
+const mmPx = (mm, dpi) => Math.round(mm / 25.4 * dpi);
+
+// maschera persona: 1 = persona, 0 = sfondo, dalla probabilità di "sfondo" del modello
+function personMask(seg, canvas) {
+  const res = seg.segment(canvas);
+  try {
+    const m = res.confidenceMasks[0], a = m.getAsFloat32Array(), out = new Float32Array(a.length);
+    for (let i = 0; i < a.length; i++) out[i] = 1 - a[i];
+    return { a: out, w: m.width, h: m.height };
+  } finally { res.close && res.close(); }
+}
+// filtro guidato: allinea i bordi della maschera ai contorni veri (capelli, spalle)
+function guidedFilter(I, p, W, H, r, eps) {
+  const box = (src) => { // media su finestra (2r+1)^2 con immagine integrale per righe e colonne
+    const t = new Float32Array(W * H), o = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) { let s = 0; const row = y * W; for (let x = -r; x <= r; x++) s += src[row + Math.min(W - 1, Math.max(0, x))]; for (let x = 0; x < W; x++) { t[row + x] = s; s += src[row + Math.min(W - 1, x + r + 1)] - src[row + Math.max(0, x - r)]; } }
+    for (let x = 0; x < W; x++) { let s = 0; for (let y = -r; y <= r; y++) s += t[Math.min(H - 1, Math.max(0, y)) * W + x]; for (let y = 0; y < H; y++) { o[y * W + x] = s; s += t[Math.min(H - 1, y + r + 1) * W + x] - t[Math.max(0, y - r) * W + x]; } }
+    const n = (2 * r + 1) * (2 * r + 1); for (let i = 0; i < o.length; i++) o[i] /= n; return o;
+  };
+  const N = W * H, Ip = new Float32Array(N), II = new Float32Array(N);
+  for (let i = 0; i < N; i++) { Ip[i] = I[i] * p[i]; II[i] = I[i] * I[i]; }
+  const mI = box(I), mp = box(p), mIp = box(Ip), mII = box(II), a = new Float32Array(N), b = new Float32Array(N);
+  for (let i = 0; i < N; i++) { const v = mII[i] - mI[i] * mI[i], c = mIp[i] - mI[i] * mp[i]; a[i] = c / (v + eps); b[i] = mp[i] - a[i] * mI[i]; }
+  const ma = box(a), mb = box(b), q = new Float32Array(N);
+  for (let i = 0; i < N; i++) q[i] = Math.min(1, Math.max(0, ma[i] * I[i] + mb[i]));
+  return q;
+}
+async function idPrepare(file) {
+  const { face, seg } = await getVision();
+  const src = await blobToCanvas(file, 4e6, 2000), W = src.width, H = src.height;
+  const x = ctx2d(src), img = x.getImageData(0, 0, W, H), d = img.data;
+  // viso
+  const det = face.detect(src).detections || [];
+  det.sort((a, b) => b.boundingBox.width * b.boundingBox.height - a.boundingBox.width * a.boundingBox.height);
+  const f = det[0];
+  // sfondo: maschera su tutta la foto + maschera più precisa attorno alla testa
+  const full = personMask(seg, src);
+  const alpha = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let xx = 0; xx < W; xx++) {
+    const u = xx / W * full.w - .5, v = y / H * full.h - .5, u0 = Math.max(0, Math.floor(u)), v0 = Math.max(0, Math.floor(v)), u1 = Math.min(full.w - 1, u0 + 1), v1 = Math.min(full.h - 1, v0 + 1), fu = Math.min(1, Math.max(0, u - u0)), fv = Math.min(1, Math.max(0, v - v0));
+    alpha[y * W + xx] = (full.a[v0 * full.w + u0] * (1 - fu) + full.a[v0 * full.w + u1] * fu) * (1 - fv) + (full.a[v1 * full.w + u0] * (1 - fu) + full.a[v1 * full.w + u1] * fu) * fv;
+  }
+  let info = null;
+  if (f) {
+    const kp = f.keypoints.map(p => ({ x: p.x * W, y: p.y * H }));
+    const [re, le, , mo] = kp, ex = (re.x + le.x) / 2, ey = (re.y + le.y) / 2, em = Math.max(8, mo.y - ey);
+    const bb = f.boundingBox, side = Math.min(Math.max(W, H), Math.max(bb.width, bb.height) * 3.2);
+    const rx = Math.max(0, Math.round(ex - side / 2)), ry = Math.max(0, Math.round(ey - side * .5)), rw = Math.min(W - rx, Math.round(side)), rh = Math.min(H - ry, Math.round(side));
+    if (rw > 32 && rh > 32) {
+      const c = mk(512, 512); ctx2d(c).drawImage(src, rx, ry, rw, rh, 0, 0, 512, 512);
+      const loc = personMask(seg, c); free(c);
+      for (let y = ry; y < ry + rh; y++) for (let xx = rx; xx < rx + rw; xx++) {
+        const u = Math.min(loc.w - 1, Math.max(0, Math.round((xx - rx) / rw * loc.w - .5))), v = Math.min(loc.h - 1, Math.max(0, Math.round((y - ry) / rh * loc.h - .5)));
+        // ai bordi del riquadro sfumo verso la maschera generale
+        const bx = Math.min(xx - rx, rx + rw - xx) / (rw * .08), by = Math.min(y - ry, ry + rh - y) / (rh * .08), t = Math.min(1, bx, by);
+        const i = y * W + xx; alpha[i] = alpha[i] * (1 - t) + loc.a[v * loc.w + u] * t;
+      }
+    }
+    // sommità della testa: primo punto della persona sopra gli occhi
+    let crown = ey - em * 2.1;
+    for (let y = Math.max(0, Math.round(ey - em * 4)); y < ey; y++) {
+      let hits = 0; for (let xx = Math.round(ex - em * .6); xx <= ex + em * .6; xx += 2) if (xx >= 0 && xx < W && alpha[y * W + xx] > .5) hits++;
+      if (hits > em * .6 * .5) { crown = y; break; }
+    }
+    const chin = mo.y + em * .85;
+    info = { ex, ey, crown, chin, ang: Math.atan2(le.y - re.y, le.x - re.x) };
+  }
+  // rifinitura dei bordi sui contorni reali della foto
+  const G = new Float32Array(W * H); for (let i = 0, p = 0; p < W * H; p++, i += 4) G[p] = (d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114) / 255;
+  const r = Math.max(3, Math.round(Math.min(W, H) / 220));
+  // maschera più decisa: lo sfondo deve sparire del tutto, la persona restare piena
+  const ss = (v, e0, e1) => { const t = Math.min(1, Math.max(0, (v - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  for (let i = 0; i < alpha.length; i++) alpha[i] = ss(alpha[i], .3, .7);
+  const A = guidedFilter(G, alpha, W, H, r, 2e-3);
+  for (let i = 0; i < A.length; i++) A[i] = ss(A[i], .12, .88);
+  // colore dello sfondo originale vicino ai bordi, per togliere l'alone sui capelli
+  const bw = new Float32Array(W * H), br = new Float32Array(W * H), bgc = new Float32Array(W * H), bb = new Float32Array(W * H);
+  for (let p = 0, i = 0; p < W * H; p++, i += 4) { const w = 1 - A[p]; bw[p] = w; br[p] = d[i] * w; bgc[p] = d[i + 1] * w; bb[p] = d[i + 2] * w; }
+  const blur = (s, R) => { const t = new Float32Array(W * H), o = new Float32Array(W * H); for (let y = 0; y < H; y++) { let a2 = 0; const row = y * W; for (let xx = -R; xx <= R; xx++) a2 += s[row + Math.min(W - 1, Math.max(0, xx))]; for (let xx = 0; xx < W; xx++) { t[row + xx] = a2; a2 += s[row + Math.min(W - 1, xx + R + 1)] - s[row + Math.max(0, xx - R)]; } } for (let xx = 0; xx < W; xx++) { let a2 = 0; for (let y = -R; y <= R; y++) a2 += t[Math.min(H - 1, Math.max(0, y)) * W + xx]; for (let y = 0; y < H; y++) { o[y * W + xx] = a2; a2 += t[Math.min(H - 1, y + R + 1) * W + xx] - t[Math.max(0, y - R) * W + xx]; } } return o; };
+  const R2 = r * 4, sw = blur(bw, R2), sr = blur(br, R2), sg = blur(bgc, R2), sb = blur(bb, R2);
+  const fgImg = new ImageData(W, H), o = fgImg.data;
+  for (let p = 0, i = 0; p < W * H; p++, i += 4) {
+    const a = A[p];
+    if (a > .02 && a < .98 && sw[p] > 1e-3) {
+      const Br = sr[p] / sw[p], Bg = sg[p] / sw[p], Bb = sb[p] / sw[p];
+      o[i] = Math.min(255, Math.max(0, (d[i] - (1 - a) * Br) / a)); o[i + 1] = Math.min(255, Math.max(0, (d[i + 1] - (1 - a) * Bg) / a)); o[i + 2] = Math.min(255, Math.max(0, (d[i + 2] - (1 - a) * Bb) / a));
+    } else { o[i] = d[i]; o[i + 1] = d[i + 1]; o[i + 2] = d[i + 2]; }
+    o[i + 3] = Math.round(a * 255);
+  }
+  const fg = mk(W, H); ctx2d(fg).putImageData(fgImg, 0, 0);
+  // colore medio dei bordi della foto (per riempire se si allarga oltre la foto)
+  let er = 0, eg = 0, eb = 0, en = 0;
+  for (let k = 0; k < W; k += 4) for (const y of [0, H - 1]) { const i = (y * W + k) * 4; er += d[i]; eg += d[i + 1]; eb += d[i + 2]; en++; }
+  ID.edge = `rgb(${er / en | 0},${eg / en | 0},${eb / en | 0})`;
+  free(ID.work); free(ID.fg);
+  ID.work = src; ID.fg = fg; ID.face = info;
+  return !!info;
+}
+// posizione automatica: testa alla misura giusta, occhi al centro, testa dritta
+function idAuto() {
+  const S = ID_SIZES[ID.size], [mw, mh] = S.mm, OW = mmPx(mw, 600), OH = mmPx(mh, 600);
+  if (ID.face) {
+    const f = ID.face, head = Math.max(10, f.chin - f.crown);
+    ID.ang = Math.max(-.26, Math.min(.26, f.ang));
+    ID.k = (S.chin - S.crown) / mh * OH / head;
+    // il centro dell'immagine finale corrisponde a questo punto della foto
+    const midY = ((S.crown + S.chin) / 2 - mh / 2) / mh * OH; // distanza (in px finali) tra centro testa e centro foto
+    ID.cx = f.ex; ID.cy = (f.crown + f.chin) / 2 - midY / ID.k;
+  } else {
+    const W = ID.work.width, H = ID.work.height;
+    ID.ang = 0; ID.k = Math.max(OW / W, OH / H); ID.cx = W / 2; ID.cy = H / 2;
+  }
+}
+function idDraw(ctx, w, h) {
+  const S = ID_SIZES[ID.size], OW = mmPx(S.mm[0], 600), f = w / OW, bg = ID_BG[ID.bg];
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = bg ? `rgb(${bg.join(',')})` : ID.edge; ctx.fillRect(0, 0, w, h);
+  ctx.translate(w / 2, h / 2); ctx.rotate(-ID.ang); ctx.scale(ID.k * f, ID.k * f); ctx.translate(-ID.cx, -ID.cy);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bg ? ID.fg : ID.work, 0, 0);
+  ctx.restore();
+}
+function idRender(dpi = 600) {
+  const S = ID_SIZES[ID.size], w = mmPx(S.mm[0], dpi), h = mmPx(S.mm[1], dpi), c = mk(w, h);
+  idDraw(ctx2d(c), w, h); return c;
+}
+function idPreview() {
+  if (!ID.work) return;
+  const S = ID_SIZES[ID.size], st = $('#idStage'), maxW = st.clientWidth - 48, maxH = st.clientHeight - 40;
+  const ar = S.mm[0] / S.mm[1], cw = Math.max(80, Math.min(maxW, maxH * ar)), ch = cw / ar, dpr = Math.min(3, window.devicePixelRatio || 1);
+  const c = $('#idCanvas'); c.width = Math.round(cw * dpr); c.height = Math.round(ch * dpr); c.style.width = cw + 'px'; c.style.height = ch + 'px';
+  idDraw(c.getContext('2d'), c.width, c.height);
+  // guide: dove devono stare sommità della testa e mento
+  const g = $('#idGuide'); g.setAttribute('viewBox', `0 0 ${cw} ${ch}`); g.style.width = cw + 'px'; g.style.height = ch + 'px';
+  const yC = S.crown / S.mm[1] * ch, yM = S.chin / S.mm[1] * ch, rx = (yM - yC) * .36;
+  g.innerHTML = `<line x1="0" x2="${cw}" y1="${yC}" y2="${yC}" class="gl"/><line x1="0" x2="${cw}" y1="${yM}" y2="${yM}" class="gl"/><ellipse cx="${cw / 2}" cy="${(yC + yM) / 2 + (yM - yC) * .04}" rx="${rx}" ry="${(yM - yC) * .5}" class="go"/>`;
+}
+function idSetSize(s) { ID.size = s; document.querySelectorAll('#idSize button').forEach(b => b.classList.toggle('on', b.dataset.s === s)); idAuto(); idPreview(); }
+function idSetBg(b) { ID.bg = b; document.querySelectorAll('#idBg button').forEach(x => x.classList.toggle('on', x.dataset.bg === b)); idPreview(); }
+$('#idBtn').onclick = () => $('#idInput').click();
+$('#idRetake').onclick = () => $('#idInput').click();
+$('#idInput').onchange = async e => {
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  show('idphoto', true); $('#idWait').classList.remove('hidden'); $('#idWait').textContent = 'Riconosco viso e sfondo…';
+  try {
+    await raf();
+    const ok = await idPrepare(file);
+    idAuto(); $('#idWait').classList.add('hidden'); idPreview();
+    if (!ok) toast('Non trovo il viso: sistemalo tu trascinando la foto');
+  } catch (err) {
+    console.warn(err); $('#idWait').textContent = 'Serve internet la prima volta per preparare le fototessere';
+  }
+};
+document.querySelectorAll('#idSize button').forEach(b => b.onclick = () => idSetSize(b.dataset.s));
+document.querySelectorAll('#idBg button').forEach(b => b.onclick = () => idSetBg(b.dataset.bg));
+function idClose() { show('idphoto', false); free(ID.work); free(ID.fg); ID.work = ID.fg = null; renderAll(); }
+$('#idCancel').onclick = idClose;
+window.addEventListener('resize', () => { if (!$('#idphoto').classList.contains('hidden')) idPreview(); });
+// spostare e ingrandire con le dita
+{
+  const pts = new Map(); let start = null;
+  const st = $('#idStage');
+  const snap = () => { const a = [...pts.values()]; return { k: ID.k, cx: ID.cx, cy: ID.cy, x: a.reduce((s, p) => s + p.x, 0) / a.length, y: a.reduce((s, p) => s + p.y, 0) / a.length, d: a.length > 1 ? Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y) : 0 }; };
+  st.addEventListener('pointerdown', e => { if (!ID.work) return; st.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); start = snap(); });
+  st.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !start) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); const now = snap();
+    const S = ID_SIZES[ID.size], cw = parseFloat($('#idCanvas').style.width) || 1, f = cw / mmPx(S.mm[0], 600);
+    if (pts.size > 1 && start.d > 0 && now.d > 0) ID.k = Math.max(.05, Math.min(20, start.k * now.d / start.d));
+    // lo spostamento sullo schermo diventa spostamento nella foto, tenendo conto della rotazione
+    const dx = (now.x - start.x) / (ID.k * f), dy = (now.y - start.y) / (ID.k * f), c = Math.cos(ID.ang), s = Math.sin(ID.ang);
+    ID.cx = start.cx - (dx * c - dy * s); ID.cy = start.cy - (dx * s + dy * c);
+    idPreview();
+  });
+  const end = e => { pts.delete(e.pointerId); start = pts.size ? snap() : null; };
+  st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+}
+$('#idSave').onclick = async () => {
+  if (!ID.work) return;
+  busy('Salvo la fototessera…'); await raf();
+  let c = null;
+  try {
+    c = idRender(600);
+    const d = await newDoc(); d.name = `Fototessera ${todayStr()}`; d.autoName = false; await safe(store.put('docs', d));
+    await savePage(c, FULL, 0, 'original', null, d.id);
+    toast('Fototessera salvata in Archivio'); idClose();
+  } catch (e) { toast('Errore: ' + e.message); }
+  finally { free(c); busy(false); }
+};
+// condivisione: foto singola, foglio 10×15 da stampare, PDF A4 da stampare a casa
+$('#idShare').onclick = () => { if (ID.work) $('#idSheet').classList.remove('hidden'); };
+$('#idSheet').onclick = e => { if (e.target.id === 'idSheet') $('#idSheet').classList.add('hidden'); };
+const idName = () => `Fototessera ${todayStr()}`;
+function idGrid(pw, ph, w, h, gap, margin) {
+  const cols = Math.max(1, Math.floor((pw - 2 * margin + gap) / (w + gap))), rows = Math.max(1, Math.floor((ph - 2 * margin + gap) / (h + gap)));
+  const x0 = (pw - cols * w - (cols - 1) * gap) / 2, y0 = (ph - rows * h - (rows - 1) * gap) / 2, out = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push([x0 + c * (w + gap), y0 + r * (h + gap)]);
+  return out;
+}
+$('#idOne').onclick = async () => {
+  $('#idSheet').classList.add('hidden');
+  const c = idRender(600), b = await toBlob(c, 'image/jpeg', .95); free(c);
+  await deliver([new File([b], idName() + '.jpg', { type: 'image/jpeg' })], 'Fototessera', false);
+};
+$('#idPrint').onclick = async () => {
+  $('#idSheet').classList.add('hidden');
+  const S = ID_SIZES[ID.size], dpi = 300, PW = mmPx(152, dpi), PH = mmPx(102, dpi), w = mmPx(S.mm[0], dpi), h = mmPx(S.mm[1], dpi);
+  const one = idRender(dpi), c = mk(PW, PH), x = ctx2d(c);
+  x.fillStyle = '#fff'; x.fillRect(0, 0, PW, PH); x.strokeStyle = '#c8c8c8'; x.lineWidth = 2;
+  for (const [px, py] of idGrid(PW, PH, w, h, mmPx(3, dpi), mmPx(3, dpi))) { x.drawImage(one, Math.round(px), Math.round(py), w, h); x.strokeRect(Math.round(px) - 1, Math.round(py) - 1, w + 2, h + 2); }
+  free(one); const b = await toBlob(c, 'image/jpeg', .95); free(c);
+  await deliver([new File([b], idName() + ' 10x15.jpg', { type: 'image/jpeg' })], 'Foglio 10×15', false);
+};
+$('#idPdf').onclick = async () => {
+  $('#idSheet').classList.add('hidden');
+  if (!window.jspdf) { toast('Libreria PDF non caricata (serve internet la prima volta)'); return; }
+  const S = ID_SIZES[ID.size], [w, h] = S.mm, one = idRender(600), data = one.toDataURL('image/jpeg', .95); free(one);
+  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  doc.setDrawColor(190); doc.setLineWidth(.1);
+  for (const [px, py] of idGrid(210, 285, w, h, 4, 8)) { doc.addImage(data, 'JPEG', px, py, w, h, 'ft', 'NONE'); doc.rect(px, py, w, h); }
+  doc.setFontSize(8); doc.setTextColor(140); doc.text(`Fototessera ${w}×${h} mm · stampa al 100% (dimensione reale), senza adattare alla pagina`, 105, 292, { align: 'center' });
+  await deliver([new File([doc.output('blob')], idName() + ' A4.pdf', { type: 'application/pdf' })], 'PDF', false);
+};
+
 /* ---------------- backup su iCloud / File ---------------- */
 const ZIP_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
 async function getZip() { if (!window.JSZip) await loadScript(ZIP_SRC); return window.JSZip; }
@@ -2344,7 +2672,7 @@ if ('serviceWorker' in navigator) {
   // con internet, scarica in anticipo le librerie usate dopo (PDF, backup), così funzionano anche offline
   window.addEventListener('load', () => setTimeout(() => {
     if (!navigator.onLine) return;
-    [PDFJS_SRC, PDFJS_WORKER, ZIP_SRC, PPTX_SRC].forEach(u => fetch(u, { mode: 'cors' }).catch(() => {}));
+    [PDFJS_SRC, PDFJS_WORKER, ZIP_SRC, PPTX_SRC, MP_FACE, MP_BASE + '/vision_bundle.mjs'].forEach(u => fetch(u, { mode: 'cors' }).catch(() => {}));
   }, 5000));
 }
 
