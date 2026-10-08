@@ -370,7 +370,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 <div id="busy" class="busy hidden"><div class="spinner"></div><span id="busyText">Elaborazione…</span></div>
 <div id="toast" class="toast"></div>
 <input id="camInput" type="file" accept="image/*" capture="environment" hidden>
-<input id="fileInput" type="file" accept="image/*" multiple hidden>
+<input id="fileInput" type="file" accept="image/*,application/pdf,.pdf" multiple hidden>
 
 <script>
 'use strict';
@@ -1010,9 +1010,66 @@ $('#archSearch').addEventListener('input', renderArchive);
 $('#sessOpen').onclick = () => currentId && openDoc(currentId, 'home');
 $('#sessDone').onclick = () => { currentId = null; safe(store.set('current', null)); renderHome(); toast('Salvato in Archivio'); };
 
+/* importazione PDF (es. documenti esportati da CamScanner) */
+const PDFJS_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+async function getPdfjs() {
+  if (!window.pdfjsLib) {
+    await loadScript(PDFJS_SRC);
+    try { const t = await (await fetch(PDFJS_WORKER)).text(); pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], { type: 'text/javascript' })); }
+    catch (e) { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; }
+  }
+  return window.pdfjsLib;
+}
+const isPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+// Ogni PDF diventa un documento (o aggiunge pagine a quello aperto)
+async function importPdf(file, idx, total, intoDocId) {
+  const lib = await getPdfjs();
+  const pdf = await lib.getDocument({ data: await file.arrayBuffer() }).promise;
+  let d = intoDocId && getDoc(intoDocId), created = false;
+  if (!d) {
+    d = await newDoc(); created = true;
+    d.name = (file.name || '').replace(/\.pdf$/i, '').trim() || defaultName();
+    d.autoName = false; d.createdAt = file.lastModified || Date.now();
+    await safe(store.put('docs', d));
+  }
+  let n = 0;
+  for (let i = 1; i <= pdf.numPages; i++) {
+    busy(`PDF ${idx} di ${total} · pagina ${i} di ${pdf.numPages}…`); await raf();
+    const page = await pdf.getPage(i);
+    const v1 = page.getViewport({ scale: 1 });
+    const [w] = fitSize(v1.width * 5, v1.height * 5, 3508, 8e6); // circa 300 dpi su un A4
+    const vp = page.getViewport({ scale: w / v1.width });
+    const c = mk(Math.round(vp.width), Math.round(vp.height)), x = c.getContext('2d');
+    try {
+      if (!x) throw new Error('Memoria grafica esaurita');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: x, viewport: vp }).promise;
+      await savePage(c, FULL, 0, 'original', null, d.id); n++;
+    } catch (e) { console.warn('Pagina PDF saltata', i, e); }
+    finally { free(c); page.cleanup(); }
+  }
+  await pdf.destroy();
+  if (!n && created) await deleteDoc(d, true);
+  return n;
+}
+
 async function openFiles(files) {
   if (!files.length) return;
   const docId = target, from = returnTo;
+  const pdfs = files.filter(isPdf);
+  if (pdfs.length) {
+    let nd = 0, np = 0;
+    for (let k = 0; k < pdfs.length; k++) {
+      try { const n = await importPdf(pdfs[k], k + 1, pdfs.length, from === 'doc' ? docId : null); if (n) { nd++; np += n; } }
+      catch (e) { console.warn(e); toast('PDF non leggibile: ' + (pdfs[k].name || '')); }
+    }
+    busy(false); renderAll();
+    if (np) toast(from === 'doc' ? (np === 1 ? '1 pagina aggiunta' : `${np} pagine aggiunte`) : `${nd === 1 ? '1 documento importato' : nd + ' documenti importati'} (${np === 1 ? '1 pagina' : np + ' pagine'})`);
+    if (np && from === 'home') openArchive();
+    files = files.filter(f => !isPdf(f));
+    if (!files.length) return;
+  }
   if (files.length === 1) {
     busy('Apertura…');
     try { const c = await blobToCanvas(files[0]); busy(false); openEditor(c, null, docId, from); }
