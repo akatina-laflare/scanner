@@ -200,6 +200,11 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 /* titolo nitido */
 .brand{color:#fff;-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;letter-spacing:-.01em;font-weight:700;transform:none;filter:none}
 .brand span{font-size:23px;line-height:1}
+/* logo al centro, lontano dalla fascia che Safari sfoca sotto la barra di stato */
+.brand-center{flex:0 0 auto;justify-content:center;gap:12px;margin-bottom:6px}
+.brand-center img{width:40px;height:40px;border-radius:12px}
+.brand-center span{font-size:28px}
+.hero-wrap{padding-top:calc(var(--st) + 20px)}
 .brand img{box-shadow:none}
 </style>
 </head>
@@ -208,10 +213,8 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 <!-- HOME: solo scansione -->
 <div id="home" class="screen">
-  <header class="bar">
-    <div class="brand"><img id="brandIcon" alt=""><span>Scanner</span></div>
-  </header>
   <main class="hero-wrap">
+    <div class="brand brand-center"><img id="brandIcon" alt=""><span>Scanner</span></div>
     <div class="hero glass">
       <div class="hero-ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 015.5 4H8M16 4h2.5A1.5 1.5 0 0120 5.5V8M20 16v2.5a1.5 1.5 0 01-1.5 1.5H16M8 20H5.5A1.5 1.5 0 014 18.5V16"/><path d="M4 12h16"/></svg></div>
       <h1 id="heroTitle">Pronto a scansionare</h1>
@@ -378,7 +381,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '7';
+const APP_VERSION = '8';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
