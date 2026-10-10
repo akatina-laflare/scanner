@@ -50,6 +50,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);border:1px solid var(--stroke);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14)}
 .screen{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column}
 .panel::after,.viewer::after,.editor::after{content:"";position:absolute;left:0;right:0;top:100%;height:calc(var(--sb) + 160px);background:inherit;pointer-events:none}
+.swiping{box-shadow:-18px 0 40px rgba(0,0,0,.45)}
 .panel{z-index:3;background:radial-gradient(900px 600px at 0% -10%,#141c40 0%,transparent 60%),radial-gradient(800px 600px at 110% 110%,#0b2a33 0%,transparent 55%),var(--bg);animation:slide .28s cubic-bezier(.2,.9,.3,1)}
 @keyframes slide{from{transform:translateX(30px);opacity:0}}
 .muted{color:var(--muted);font-size:13px}
@@ -475,7 +476,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '16';
+const APP_VERSION = '17';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
@@ -2615,6 +2616,45 @@ $('#idPdf').onclick = async () => {
   doc.setFontSize(8); doc.setTextColor(140); doc.text(`Fototessera ${w}×${h} mm · stampa al 100% (dimensione reale), senza adattare alla pagina`, 105, 292, { align: 'center' });
   await deliver([new File([doc.output('blob')], idName() + ' A4.pdf', { type: 'application/pdf' })], 'PDF', false);
 };
+
+/* ---------------- indietro scorrendo da sinistra verso destra ---------------- */
+// come su iPhone: la schermata segue il dito e, se la lasci andare abbastanza a destra, si torna indietro
+function swipeBack(el, back, canStart) {
+  let st = null;
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || !canStart(e.touches[0], e)) { st = null; return; }
+    const t = e.touches[0]; st = { x: t.clientX, y: t.clientY, t: Date.now(), on: false, dx: 0 };
+  }, { passive: true });
+  el.addEventListener('touchmove', e => {
+    if (!st || e.touches.length !== 1) return;
+    const t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if (!st.on) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { st = null; return; } // scorrimento verticale: lascio stare
+      if (dx > 14 && dx > Math.abs(dy) * 1.4) { st.on = true; st.x0 = t.clientX; el.style.transition = 'none'; el.classList.add('swiping'); }
+      else return;
+    }
+    e.preventDefault();
+    st.dx = Math.max(0, t.clientX - st.x0); el.style.transform = `translateX(${st.dx}px)`;
+  }, { passive: false });
+  const end = () => {
+    if (!st) return;
+    const s0 = st; st = null; if (!s0.on) return;
+    const w = el.clientWidth || window.innerWidth, v = s0.dx / Math.max(1, Date.now() - s0.t);
+    const go = s0.dx > w * .33 || (v > .45 && s0.dx > 50);
+    el.style.transition = 'transform .22s cubic-bezier(.2,.9,.3,1)';
+    el.style.transform = go ? `translateX(${w}px)` : 'translateX(0)';
+    setTimeout(() => {
+      el.style.transition = ''; el.style.transform = ''; el.classList.remove('swiping');
+      if (go) back();
+    }, 230);
+  };
+  el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+}
+const notField = (t, e) => !(e.target.closest && e.target.closest('input,textarea,select'));
+swipeBack($('#archive'), () => $('#archBack').click(), notField);
+swipeBack($('#docview'), () => closeDoc(), (t, e) => notField(t, e) && !editMode);
+// nella pagina aperta: dal bordo sinistro, oppure sulla prima pagina (dove scorrere a destra non porta a nessuna pagina)
+swipeBack($('#viewer'), () => closeViewer(), t => Z.s <= 1 && (t.clientX < 30 || $('#vTrack').scrollLeft < 4));
 
 /* ---------------- backup su iCloud / File ---------------- */
 const ZIP_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
