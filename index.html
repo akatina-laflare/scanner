@@ -56,7 +56,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .muted{color:var(--muted);font-size:13px}
 
 /* barre */
-.bar{display:flex;align-items:center;gap:10px;padding:calc(var(--st) + 30px) 16px 10px;position:relative;z-index:2;flex:0 0 auto}
+.bar{display:flex;align-items:center;gap:10px;padding:calc(var(--st) + 44px) 16px 10px;position:relative;z-index:2;flex:0 0 auto}
 .bar h2{font-size:22px;font-weight:700;letter-spacing:-.02em;flex:1}
 .brand{flex:1;display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;letter-spacing:-.02em}
 .brand img{width:34px;height:34px;border-radius:10px;box-shadow:0 4px 16px rgba(94,140,255,.35)}
@@ -122,7 +122,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .empty-small strong{color:var(--text);font-size:17px}
 
 /* documento */
-.doc-bar{margin:calc(var(--st) + 28px) 12px 0;padding:8px;gap:6px}
+.doc-bar{margin:calc(var(--st) + 42px) 12px 0;padding:8px;gap:6px}
 .title-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;padding-left:4px}
 .doc-name{background:none;border:0;color:var(--text);font:inherit;font-size:18px;font-weight:650;letter-spacing:-.01em;outline:none;width:100%;text-overflow:ellipsis;-webkit-user-select:text;user-select:text}
 .grid{flex:1;overflow-y:auto;padding:16px 14px calc(var(--sb) + 120px);display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:14px;align-content:start;-webkit-overflow-scrolling:touch}
@@ -145,7 +145,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 /* visualizzatore */
 .viewer{z-index:4;background:#05070d;animation:fade .2s}
-.v-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(var(--st) + 26px) 12px 8px;position:relative;z-index:2}
+.v-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(var(--st) + 40px) 12px 8px;position:relative;z-index:2}
 .v-title{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
 .v-title strong{font-size:15px;font-weight:620;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v-track{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;min-height:0;overscroll-behavior-x:contain}
@@ -159,7 +159,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 
 /* editor */
 .editor{z-index:6;background:#05070d;animation:fade .2s}
-.ed-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(var(--st) + 26px) 12px 8px;position:relative;z-index:3;flex:0 0 auto}
+.ed-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:calc(var(--st) + 40px) 12px 8px;position:relative;z-index:3;flex:0 0 auto}
 .seg{display:flex;padding:4px;border-radius:99px;gap:2px}
 .seg button{flex:1;padding:7px 14px;border-radius:99px;font-size:14px;font-weight:600;color:var(--muted);transition:background .2s,color .2s;white-space:nowrap}
 .seg button.on{background:rgba(255,255,255,.18);color:var(--text)}
@@ -287,7 +287,9 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 .brand-center{flex:0 0 auto;justify-content:center;gap:12px;margin-bottom:6px}
 .brand-center img{width:40px;height:40px;border-radius:12px}
 .brand-center span{font-size:28px}
-.hero-wrap{padding-top:calc(var(--st) + 20px)}
+.hero-wrap{padding-top:calc(var(--st) + 56px)}
+.hero-wrap{justify-content:safe center;overflow-y:auto;-webkit-overflow-scrolling:touch}
+@media (max-height:740px){.hero.compact p{display:none}.hero.compact{padding:16px 20px}.hero.compact .hero-ic{width:46px;height:46px;margin-bottom:8px}.q-chip small{display:none}.hero-wrap{gap:12px}}
 .brand img{box-shadow:none}
 </style>
 </head>
@@ -564,7 +566,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stro
 const $ = s => document.querySelector(s);
 const raf = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const FILTERS = [['auto','Auto'],['color','Colore'],['magic','Documento'],['enhance','Grigio'],['bw','B/N'],['original','Originale']];
-const APP_VERSION = '19';
+const APP_VERSION = '20';
 const FULL = [[0,0],[1,0],[1,1],[0,1]];
 const ICON = {
   left:'<svg class="i" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></svg>',
