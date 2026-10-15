@@ -2,7 +2,7 @@
 // La pagina viene presa dalla rete quando c'è (così arrivano gli aggiornamenti),
 // altrimenti dalla copia salvata. Librerie e modelli scaricati una volta restano in memoria.
 const CACHE = 'scanner-offline-v1';
-const SHELL = ['./', './index.html'];
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
